@@ -46,8 +46,8 @@ arena:
   auto-build: true
   size: 48               # 正方形场地边长（格）
   floor-y: 64            # 地板高度
-  wall-height: 44        # 玻璃围墙高度（透明，顶部封玻璃天花板）
-  clear-above: 60        # 地板上方清空高度（需大于墙高）
+  wall-height: 28        # 玻璃围墙高度（透明，顶部封玻璃天花板）
+  clear-above: 44        # 地板上方清空高度（需大于墙高）
 
 # 阶段与奖励配置文件名（位于插件数据目录 stages/ 与 rewards/ 下）
 stages:
