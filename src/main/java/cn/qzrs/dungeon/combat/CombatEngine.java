@@ -72,14 +72,14 @@ public class CombatEngine implements Listener {
     }
 
     /**
-     * 副本怪免疫地形/环境伤害（阳光、岩浆、摔落、窒息、溺水…）。
-     * 否则白天僵尸会烧死、掉进坑里会摔死，玩家还没打怪就自己没了。
+     * 副本怪护盾：只接受来自玩家的伤害，其余一切伤害源全部免除。
+     *
+     * <p>覆盖范围：阳光燃烧、岩浆、摔落、窒息、溺水、VEX 的自然衰减、
+     * 苦力怕互炸，以及任何非玩家来源的伤害。这样怪不会"自己消失"，
+     * 阶段推进只可能由玩家击杀触发。
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onEnvironmentalDamage(EntityDamageEvent e) {
-        if (e instanceof EntityDamageByEntityEvent) {
-            return;
-        }
+    public void onMobShield(EntityDamageEvent e) {
         MyDungeon plugin = MyDungeon.get();
         if (!plugin.isDungeonWorld(e.getEntity().getWorld())) {
             return;
@@ -87,14 +87,12 @@ public class CombatEngine implements Listener {
         if (plugin.instances().byMob(e.getEntity().getUniqueId()) == null) {
             return;
         }
-
-        switch (e.getCause()) {
-            case FIRE, FIRE_TICK, LAVA, HOT_FLOOR, MELTING,
-                 SUFFOCATION, CRAMMING, STARVATION, DROWNING, FALL, VOID ->
-                    e.setCancelled(true);
-            default -> {
-            }
+        if (e instanceof EntityDamageByEntityEvent byEntity
+                && resolveDamager(byEntity.getDamager()) instanceof Player) {
+            // 玩家造成的伤害交给 onEntityDamageByEntity 走 RPG 公式
+            return;
         }
+        e.setCancelled(true);
     }
 
     /** 箭矢/投掷物伤害追到发射者 */

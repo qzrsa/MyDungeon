@@ -19,7 +19,8 @@ git add -A
 if git diff --cached --quiet; then
   echo "[push.sh] 无改动需要提交，直接推送现有提交"
 else
-  git commit -m "$MSG"
+  # 经 stdin 传给 git，避免 GBK 控制台对中文 -m 参数的转码问题
+  printf '%s\n' "$MSG" | git commit -F -
 fi
 
 TOKEN=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill | sed -n 's/^password=//p')

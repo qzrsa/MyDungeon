@@ -1,58 +1,195 @@
 # ============================================================
-#  怪模板 —— MVP 全部集中在这一个文件
-#  health / damage / armor 会再乘一次 config.yml 里的 mobs.*-scale
-#  entity 取值见 Bukkit EntityType（ZOMBIE / SKELETON / WITHER_SKELETON / SPIDER ...）
+#  怪模板（v0.3.0）
+# ------------------------------------------------------------
+#  档位：
+#    tier1  普通杂兵   —— 第 1~3 层
+#    tier2  中级怪     —— 第 4~5 层
+#    tier3  强敌       —— 第 6~7 层
+#    elite  精英       —— 第 8~10 层
+#    boss   首领       —— 第 9、10 层（boss: true 才显示顶部血条）
 #
-#  v0.2.0：全体数值加强约一倍，并新增精英射手。
-#  若进游戏后仍觉得太脆，优先改 config.yml 的 mobs.health-scale，
-#  不必动这个文件（改完 /dungeon reload 即可）。
+#  health / damage / armor 会再乘一次 config.yml 里的 mobs.*-scale
+#  同一层请只放 1 个 boss: true 的怪 —— 血条只跟踪第一个
+#
+#  设计约束（副本引擎相关，改怪种类时请遵守）：
+#   1. 副本怪只吃玩家伤害，其余伤害源一律免除，不怕火烧 / 摔落 / 互炸
+#   2. 远程怪与投掷物的伤害会自动追溯到发射者，同样走 RPG 公式
+#   3. CREEPER 的爆炸伤害直接用下表 damage 值，不按原版爆心距离衰减
 # ============================================================
 
 templates:
-  # ---- 普通怪 ----
-  normal_grunt:
+  # ---------------- tier1 · 普通杂兵 ----------------
+  grunt:
     name: '&f地窟守卫'
     entity: ZOMBIE
-    health: 1800
-    damage: 50
-    armor: 30
+    health: 1500
+    damage: 45
+    armor: 25
     speed: 0.28
     boss: false
 
-  normal_archer:
+  archer:
     name: '&f地窟射手'
     entity: SKELETON
-    health: 1500
-    damage: 60
-    armor: 25
+    health: 1200
+    damage: 55
+    armor: 20
     speed: 0.30
     boss: false
 
-  # ---- 精英怪 ----
+  husk:
+    name: '&7枯骨游荡者'
+    entity: HUSK
+    health: 1800
+    damage: 50
+    armor: 28
+    speed: 0.27
+    boss: false
+
+  spider:
+    name: '&7巢穴蛛'
+    entity: SPIDER
+    health: 1400
+    damage: 40
+    armor: 18
+    speed: 0.32
+    boss: false
+
+  # ---------------- tier2 · 中级怪 ----------------
+  drowned:
+    name: '&3溺亡者'
+    entity: DROWNED
+    health: 2200
+    damage: 60
+    armor: 30
+    speed: 0.27
+    boss: false
+
+  stray:
+    name: '&b霜寒射手'
+    entity: STRAY
+    health: 2000
+    damage: 70
+    armor: 28
+    speed: 0.30
+    boss: false
+
+  creeper:
+    name: '&a爆破虫'
+    entity: CREEPER
+    health: 1600
+    damage: 120
+    armor: 20
+    speed: 0.28
+    boss: false
+
+  silverfish:
+    name: '&8蚀骨虫'
+    entity: SILVERFISH
+    health: 800
+    damage: 30
+    armor: 10
+    speed: 0.40
+    boss: false
+
+  cave_spider:
+    name: '&2剧毒蛛'
+    entity: CAVE_SPIDER
+    health: 1600
+    damage: 55
+    armor: 22
+    speed: 0.36
+    boss: false
+
+  # ---------------- tier3 · 强敌 ----------------
+  piglin:
+    name: '&6熔岩蛮兵'
+    entity: ZOMBIFIED_PIGLIN
+    health: 3000
+    damage: 75
+    armor: 40
+    speed: 0.27
+    boss: false
+
+  blaze:
+    name: '&e烈焰使'
+    entity: BLAZE
+    health: 2600
+    damage: 80
+    armor: 35
+    speed: 0.26
+    boss: false
+
+  witch:
+    name: '&5炼金女巫'
+    entity: WITCH
+    health: 3500
+    damage: 65
+    armor: 30
+    speed: 0.25
+    boss: false
+
+  # ---------------- elite · 精英 ----------------
   elite_brute:
     name: '&c精英·碎骨者'
-    entity: ZOMBIE
-    health: 5000
-    damage: 90
-    armor: 55
-    speed: 0.26
+    entity: VINDICATOR
+    health: 8000
+    damage: 110
+    armor: 60
+    speed: 0.30
     boss: false
 
   elite_marksman:
     name: '&c精英·穿刺者'
     entity: SKELETON
-    health: 4200
-    damage: 110
-    armor: 45
+    health: 6500
+    damage: 130
+    armor: 55
+    speed: 0.32
+    boss: false
+
+  elite_vex:
+    name: '&c精英·噬魂鬼'
+    entity: VEX
+    health: 5000
+    damage: 100
+    armor: 50
+    speed: 0.40
+    boss: false
+
+  elite_piglin_brute:
+    name: '&c精英·猪灵战将'
+    entity: PIGLIN_BRUTE
+    health: 12000
+    damage: 160
+    armor: 75
+    speed: 0.28
+    boss: false
+
+  elite_ravager:
+    name: '&c精英·破坏者'
+    entity: RAVAGER
+    health: 18000
+    damage: 180
+    armor: 80
     speed: 0.30
     boss: false
 
-  # ---- 首领 ----
+  # ---------------- boss · 首领 ----------------
   boss_warden:
     name: '&4&l遗忘典狱长'
     entity: WITHER_SKELETON
-    health: 45000
-    damage: 130
-    armor: 75
-    speed: 0.26
+    health: 60000
+    damage: 200
+    armor: 90
+    speed: 0.28
+    boss: true
+
+  boss_ravager:
+    name: '&4&l终末吞噬者'
+    entity: RAVAGER
+    health: 150000
+    damage: 260
+    armor: 110
+    speed: 0.32
     boss: true

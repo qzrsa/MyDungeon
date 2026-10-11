@@ -112,7 +112,7 @@ public class StageManager {
         inst.completed = false;
         inst.startTime = System.currentTimeMillis();
         broadcast(inst, ChatColor.GOLD + "▶ " + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', dungeonName))
-                + " 开始！共 " + stages.size() + " 个阶段。");
+                + " 开始！共 " + stages.size() + " 层。");
         startStage(inst, 0);
     }
 
@@ -125,7 +125,7 @@ public class StageManager {
         StageDef def = stages.get(index);
         String title = ChatColor.translateAlternateColorCodes('&', def.name);
 
-        broadcast(inst, ChatColor.YELLOW + "◆ 阶段 " + (index + 1) + "/" + stages.size() + "：" + title);
+        broadcast(inst, ChatColor.YELLOW + "◆ 第 " + (index + 1) + " 层 / 共 " + stages.size() + " 层：" + title);
 
         World w = Bukkit.getWorld(inst.worldName);
         if (w == null) {
@@ -186,7 +186,7 @@ public class StageManager {
         inst.completed = true;
         inst.state = DungeonInstance.State.FINISHED;
         long seconds = (System.currentTimeMillis() - inst.startTime) / 1000L;
-        broadcast(inst, ChatColor.GREEN + "✔ 副本通关！用时 " + seconds + " 秒。");
+        broadcast(inst, ChatColor.GREEN + "✔ 全部 " + stages.size() + " 层通关！用时 " + seconds + " 秒。");
         MyDungeon.get().rewards().give(inst);
         MyDungeon.get().endInstance(inst, "通关");
     }

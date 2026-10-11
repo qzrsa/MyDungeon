@@ -1,9 +1,9 @@
 name: MyDungeon
-version: 0.2.0
+version: 0.3.0
 main: cn.qzrs.dungeon.MyDungeon
 api-version: '1.21'
 authors: [qzrs]
-description: '副本挑战 —— 独立数值体系（自研伤害引擎 + 自定义怪）。副本世界运行在真虚空生成器上，零地形开销'
+description: '副本挑战 —— 独立数值体系（自研伤害引擎 + 自定义怪）。19 种怪 / 10 层试炼 / 真虚空世界'
 softdepend: [Multiverse-Core]
 commands:
   dungeon:

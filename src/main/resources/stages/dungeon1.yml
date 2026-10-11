@@ -1,46 +1,82 @@
 # ============================================================
-#  副本关卡编排（线性阶段）
-#  规则：按顺序执行，当前阶段的怪全部清空后，才进入下一阶段。
-#  type: WAVE = 普通波次；BOSS = 首领战（会显示 BossBar）
-#
-#  v0.2.0：3 阶段 → 5 阶段（4 波 + 首领），怪量与怪物种类同步提升。
+#  副本关卡编排 —— 十层试炼（v0.3.0）
+#  规则：按顺序执行，当前层的怪全部清空后，才进入下一层。
+#  type: WAVE = 普通层；BOSS = 首领层（顶部显示 BossBar）
+#  注意：同一层里请只放 1 个 boss: true 的怪 —— 血条只跟踪第一个。
 # ============================================================
 
 id: dungeon1
-name: '&6遗忘地窟'
+name: '&6遗忘地窟 · 十层试炼'
 
 stages:
-  # ---- 第 1 波：热身，纯近战 ----
+  # ---------- 第 1~3 层：普通杂兵 ----------
   - type: WAVE
-    name: '&e第一波 · 守卫'
+    name: '&e第 1 层 · 入口守卫'
     spawns:
-      - { mob: normal_grunt, count: 8 }
+      - { mob: grunt, count: 8 }
 
-  # ---- 第 2 波：加入远程 ----
   - type: WAVE
-    name: '&e第二波 · 弓手加入'
+    name: '&e第 2 层 · 弓手哨卡'
     spawns:
-      - { mob: normal_grunt, count: 10 }
-      - { mob: normal_archer, count: 4 }
+      - { mob: grunt, count: 8 }
+      - { mob: archer, count: 4 }
 
-  # ---- 第 3 波：精英现身 ----
   - type: WAVE
-    name: '&6第三波 · 精英现身'
+    name: '&e第 3 层 · 蛛巢'
     spawns:
-      - { mob: normal_grunt, count: 8 }
-      - { mob: elite_brute, count: 3 }
+      - { mob: husk, count: 6 }
+      - { mob: spider, count: 5 }
 
-  # ---- 第 4 波：全场混战 ----
+  # ---------- 第 4~5 层：中级怪 ----------
   - type: WAVE
-    name: '&6第四波 · 全场混战'
+    name: '&6第 4 层 · 溺亡回廊'
     spawns:
-      - { mob: normal_grunt, count: 10 }
-      - { mob: normal_archer, count: 6 }
+      - { mob: drowned, count: 7 }
+      - { mob: stray, count: 4 }
+      - { mob: spider, count: 4 }
+
+  - type: WAVE
+    name: '&6第 5 层 · 爆破区'
+    spawns:
+      - { mob: creeper, count: 4 }
+      - { mob: silverfish, count: 8 }
+      - { mob: husk, count: 5 }
+
+  # ---------- 第 6~7 层：强敌 ----------
+  - type: WAVE
+    name: '&6第 6 层 · 熔岩熔炉'
+    spawns:
+      - { mob: piglin, count: 6 }
+      - { mob: blaze, count: 3 }
+      - { mob: creeper, count: 3 }
+
+  - type: WAVE
+    name: '&6第 7 层 · 女巫祭坛'
+    spawns:
+      - { mob: witch, count: 3 }
+      - { mob: cave_spider, count: 7 }
+      - { mob: stray, count: 5 }
+
+  # ---------- 第 8 层：精英前哨 ----------
+  - type: WAVE
+    name: '&c第 8 层 · 精英前哨'
+    spawns:
       - { mob: elite_brute, count: 3 }
       - { mob: elite_marksman, count: 3 }
+      - { mob: elite_vex, count: 4 }
 
-  # ---- 首领战 ----
+  # ---------- 第 9 层：小首领 ----------
   - type: BOSS
-    name: '&4首领战 · 遗忘典狱长'
+    name: '&4第 9 层 · 典狱长'
     spawns:
       - { mob: boss_warden, count: 1 }
+      - { mob: elite_piglin_brute, count: 3 }
+      - { mob: elite_ravager, count: 1 }
+
+  # ---------- 第 10 层：最终首领 ----------
+  - type: BOSS
+    name: '&4&l第 10 层 · 终末之厅'
+    spawns:
+      - { mob: boss_ravager, count: 1 }
+      - { mob: elite_vex, count: 4 }
+      - { mob: elite_marksman, count: 3 }

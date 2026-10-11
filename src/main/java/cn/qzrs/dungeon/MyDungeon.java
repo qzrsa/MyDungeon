@@ -18,6 +18,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -84,7 +88,6 @@ public class MyDungeon extends JavaPlugin {
         instance = this;
 
         saveDefaultConfig();
-        saveResource("mobs.yml", false);
         reloadAll();
 
         dungeonWorld = ArenaBuilder.ensureWorld(config.worldName);
@@ -136,13 +139,13 @@ public class MyDungeon extends JavaPlugin {
             getLogger().warning("无法创建插件数据目录：" + dataFolder);
         }
 
-        saveResource("mobs.yml", false);
+        syncResource("mobs.yml");
         mobs = MobTemplate.loadAll(YamlConfiguration.loadConfiguration(new File(dataFolder, "mobs.yml")));
 
         String stagePath = "stages/" + config.stageFile;
         String rewardPath = "rewards/" + config.rewardFile;
-        saveResource(stagePath, false);
-        saveResource(rewardPath, false);
+        syncResource(stagePath);
+        syncResource(rewardPath);
 
         stages = new StageManager();
         stages.load(YamlConfiguration.loadConfiguration(new File(dataFolder, stagePath)));
@@ -152,6 +155,38 @@ public class MyDungeon extends JavaPlugin {
                 new File(dataFolder, "clears.yml"));
 
         instances.init(config.worldName, config.slots);
+    }
+
+    /**
+     * 同步内置内容文件：与 jar 内不一致时覆盖，并先备份旧文件。
+     *
+     * <p>适用于 mobs.yml / stages / rewards 这类"随插件版本走的内容文件"。
+     * config.yml 不在此列 —— 那是用户调参用的，永不覆盖。
+     * 这样升级插件后（例如新增怪种、扩充层数）无需手动删配置即可生效。
+     */
+    private void syncResource(String resourcePath) {
+        File out = new File(getDataFolder(), resourcePath);
+        if (!out.exists()) {
+            saveResource(resourcePath, false);
+            return;
+        }
+        try (InputStream in = getResource(resourcePath)) {
+            if (in == null) {
+                return;
+            }
+            String jarText = new String(in.readAllBytes(), StandardCharsets.UTF_8).replace("\r\n", "\n");
+            String diskText = Files.readString(out.toPath(), StandardCharsets.UTF_8).replace("\r\n", "\n");
+            if (jarText.equals(diskText)) {
+                return;
+            }
+            File parent = out.getParentFile();
+            File bak = new File(parent, out.getName() + ".bak-" + System.currentTimeMillis());
+            Files.copy(out.toPath(), bak.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            saveResource(resourcePath, true);
+            getLogger().info("内容文件已更新：" + resourcePath + "（旧版备份为 " + bak.getName() + "）");
+        } catch (Exception ex) {
+            getLogger().warning("同步内容文件失败 " + resourcePath + "：" + ex.getMessage());
+        }
     }
 
     /**
