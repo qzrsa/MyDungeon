@@ -116,6 +116,7 @@ public class MyDungeon extends JavaPlugin {
         startAntiFlyTask();
         startProgressTask();
         startWorldWatchdog();
+        startMobLeashTask();
 
         getLogger().info("MyDungeon 已启用 | 副本世界=" + config.worldName
                 + " | 槽位=" + config.slots
@@ -338,6 +339,46 @@ public class MyDungeon extends JavaPlugin {
             }
             if (reset) {
                 getLogger().info("副本世界已无人，进度已重置（下次进入将从第一关开始）。");
+            }
+        }, 40L, 40L);
+    }
+
+    /**
+     * 卡怪清理：周期检查副本怪是否「越界飞出」（VEX 穿墙飞出玻璃墙 / 掉进虚空）
+     * 或「卡进方块」（刷进中心台座 / 墙体内，且窒息伤害被护盾 cancel 死不了）。
+     * 命中即清理并推进阶段，避免「总有一两只找不到、到不了下一关」。
+     */
+    private void startMobLeashTask() {
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            PluginConfig cfg = config;
+            int half = cfg.arenaSize / 2 + 2;   // 场地半宽 + 2 格余量
+            int floorY = cfg.arenaFloorY;
+            int wallTop = floorY + cfg.arenaWallHeight;
+            for (DungeonInstance inst : instances.all()) {
+                if (inst.state != DungeonInstance.State.RUNNING) {
+                    continue;
+                }
+                for (DungeonMob mob : new ArrayList<>(inst.liveMobs.values())) {
+                    if (mob.entity == null || mob.entity.isDead()) {
+                        continue;
+                    }
+                    Location loc = mob.entity.getLocation();
+                    boolean oob = Math.abs(loc.getX()) > half
+                            || Math.abs(loc.getZ()) > half
+                            || loc.getY() < floorY - 5
+                            || loc.getY() > wallTop + 5;
+                    boolean stuck = loc.getBlock().getType().isSolid()
+                            && loc.getBlockY() > floorY;
+                    if (oob || stuck) {
+                        String reason = oob ? "越界飞出" : "卡进方块";
+                        getLogger().info("清理卡住的副本怪：" + mob.template.name + "（" + reason
+                                + " @ " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + "）");
+                        UUID id = mob.entity.getUniqueId();
+                        mob.entity.remove();
+                        instances.unregisterMob(id);
+                        stages().onMobDeath(inst, id);
+                    }
+                }
             }
         }, 40L, 40L);
     }
