@@ -1,0 +1,9 @@
+# 统一换行符：仓库内存 LF，避免 Linux 端 clone 后脚本跑不起来
+* text=auto eol=lf
+
+# 二进制文件不要做换行转换
+*.jar binary
+*.png binary
+
+# Windows 批处理必须是 CRLF
+*.bat text eol=crlf
