@@ -1,8 +1,10 @@
 # ============================================================
-#  副本关卡编排 —— 十层试炼（v0.3.0）
+#  副本关卡编排 —— 十层试炼（v0.3.1）
 #  规则：按顺序执行，当前层的怪全部清空后，才进入下一层。
 #  type: WAVE = 普通层；BOSS = 首领层（顶部显示 BossBar）
 #  注意：同一层里请只放 1 个 boss: true 的怪 —— 血条只跟踪第一个。
+#
+#  v0.3.1：各层怪数量整体上调，一场共约 230 只。
 # ============================================================
 
 id: dungeon1
@@ -13,70 +15,70 @@ stages:
   - type: WAVE
     name: '&e第 1 层 · 入口守卫'
     spawns:
-      - { mob: grunt, count: 8 }
+      - { mob: grunt, count: 20 }
 
   - type: WAVE
     name: '&e第 2 层 · 弓手哨卡'
     spawns:
-      - { mob: grunt, count: 8 }
-      - { mob: archer, count: 4 }
+      - { mob: grunt, count: 14 }
+      - { mob: archer, count: 10 }
 
   - type: WAVE
     name: '&e第 3 层 · 蛛巢'
     spawns:
-      - { mob: husk, count: 6 }
-      - { mob: spider, count: 5 }
+      - { mob: husk, count: 12 }
+      - { mob: spider, count: 10 }
 
   # ---------- 第 4~5 层：中级怪 ----------
   - type: WAVE
     name: '&6第 4 层 · 溺亡回廊'
     spawns:
-      - { mob: drowned, count: 7 }
-      - { mob: stray, count: 4 }
-      - { mob: spider, count: 4 }
+      - { mob: drowned, count: 12 }
+      - { mob: stray, count: 8 }
+      - { mob: spider, count: 8 }
 
   - type: WAVE
     name: '&6第 5 层 · 爆破区'
     spawns:
-      - { mob: creeper, count: 4 }
-      - { mob: silverfish, count: 8 }
-      - { mob: husk, count: 5 }
+      - { mob: creeper, count: 8 }
+      - { mob: silverfish, count: 16 }
+      - { mob: husk, count: 10 }
 
   # ---------- 第 6~7 层：强敌 ----------
   - type: WAVE
     name: '&6第 6 层 · 熔岩熔炉'
     spawns:
-      - { mob: piglin, count: 6 }
-      - { mob: blaze, count: 3 }
-      - { mob: creeper, count: 3 }
+      - { mob: piglin, count: 12 }
+      - { mob: blaze, count: 8 }
+      - { mob: creeper, count: 6 }
 
   - type: WAVE
     name: '&6第 7 层 · 女巫祭坛'
     spawns:
-      - { mob: witch, count: 3 }
-      - { mob: cave_spider, count: 7 }
-      - { mob: stray, count: 5 }
+      - { mob: witch, count: 6 }
+      - { mob: cave_spider, count: 12 }
+      - { mob: stray, count: 10 }
 
   # ---------- 第 8 层：精英前哨 ----------
   - type: WAVE
     name: '&c第 8 层 · 精英前哨'
     spawns:
-      - { mob: elite_brute, count: 3 }
-      - { mob: elite_marksman, count: 3 }
-      - { mob: elite_vex, count: 4 }
+      - { mob: elite_brute, count: 6 }
+      - { mob: elite_marksman, count: 6 }
+      - { mob: elite_vex, count: 10 }
 
   # ---------- 第 9 层：小首领 ----------
   - type: BOSS
     name: '&4第 9 层 · 典狱长'
     spawns:
       - { mob: boss_warden, count: 1 }
-      - { mob: elite_piglin_brute, count: 3 }
-      - { mob: elite_ravager, count: 1 }
+      - { mob: elite_piglin_brute, count: 6 }
+      - { mob: elite_ravager, count: 3 }
 
   # ---------- 第 10 层：最终首领 ----------
   - type: BOSS
     name: '&4&l第 10 层 · 终末之厅'
     spawns:
       - { mob: boss_ravager, count: 1 }
-      - { mob: elite_vex, count: 4 }
-      - { mob: elite_marksman, count: 3 }
+      - { mob: elite_vex, count: 10 }
+      - { mob: elite_marksman, count: 8 }
