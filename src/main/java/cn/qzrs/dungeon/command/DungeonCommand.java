@@ -3,6 +3,7 @@ package cn.qzrs.dungeon.command;
 import cn.qzrs.dungeon.MyDungeon;
 import cn.qzrs.dungeon.arena.ArenaBuilder;
 import cn.qzrs.dungeon.instance.DungeonInstance;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,7 +18,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * /dungeon enter|leave|info|reload
@@ -27,6 +31,8 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
     private static final List<String> SUBS = List.of("enter", "leave", "info", "reload");
 
     private final MyDungeon plugin;
+    /** 正在等待进入副本倒计时的玩家 */
+    private final Set<UUID> pendingEnter = new HashSet<>();
 
     public DungeonCommand(MyDungeon plugin) {
         this.plugin = plugin;
@@ -73,23 +79,64 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
             p.sendMessage(ChatColor.RED + "你已经在副本里了，先用 /dungeon leave 出来。");
             return true;
         }
+        if (pendingEnter.contains(p.getUniqueId())) {
+            p.sendMessage(ChatColor.RED + "正在等待进入副本，请稍候...");
+            return true;
+        }
         World w = plugin.dungeonWorld();
         if (w == null) {
             p.sendMessage(ChatColor.RED + "副本世界未就绪，请查看服务端控制台报错。");
             return true;
         }
+
+        int countdown = plugin.config().enterCountdown;
+        pendingEnter.add(p.getUniqueId());
+        p.sendMessage(ChatColor.GREEN + "副本将在 " + countdown + " 秒后开始，请做好准备...");
+
+        final int[] left = {countdown};
+        Bukkit.getScheduler().runTaskTimer(plugin, task -> {
+            left[0]--;
+            if (left[0] <= 0) {
+                task.cancel();
+                pendingEnter.remove(p.getUniqueId());
+                if (p.isOnline()) {
+                    doEnter(p);
+                }
+            } else {
+                p.sendTitle(ChatColor.GOLD.toString() + left[0], ChatColor.GRAY + "即将进入副本", 0, 25, 5);
+                p.sendMessage(ChatColor.YELLOW + "进入副本倒计时：" + left[0] + " 秒");
+            }
+        }, 20L, 20L);
+        return true;
+    }
+
+    /** 倒计时结束后的真正进本流程 */
+    private void doEnter(Player p) {
+        if (plugin.instances().byPlayer(p.getUniqueId()) != null) {
+            return;
+        }
+        World w = plugin.dungeonWorld();
+        if (w == null) {
+            p.sendMessage(ChatColor.RED + "副本世界未就绪。");
+            return;
+        }
         DungeonInstance slot = plugin.instances().findFree();
         if (slot == null) {
             p.sendMessage(ChatColor.RED + "副本槽位已满（" + plugin.config().slots + " 个），请稍后再试。");
-            return true;
+            return;
         }
         if (plugin.config().requireTicket && !consumeTicket(p)) {
             p.sendMessage(ChatColor.RED + "进入副本需要门票：" + plugin.config().ticketMaterial.name());
-            return true;
+            return;
         }
 
         slot.returnPoints.put(p.getUniqueId(), p.getLocation().clone());
         slot.members.add(p.getUniqueId());
+        // 副本禁飞：记录原飞行权限，离开时还原
+        slot.allowFlightBefore.put(p.getUniqueId(), p.getAllowFlight());
+        p.setAllowFlight(false);
+        p.setFlying(false);
+        p.setGliding(false);
 
         p.teleport(ArenaBuilder.spawnLocation(w));
         AttributeInstance hp = p.getAttribute(Attribute.GENERIC_MAX_HEALTH);
@@ -99,7 +146,6 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         p.setFireTicks(0);
 
         plugin.stages().start(slot);
-        return true;
     }
 
     private boolean leave(CommandSender sender) {
@@ -116,6 +162,10 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         inst.members.remove(p.getUniqueId());
         if (inst.bossBar != null) {
             inst.bossBar.removePlayer(p);
+        }
+        Boolean flight = inst.allowFlightBefore.remove(p.getUniqueId());
+        if (flight != null) {
+            p.setAllowFlight(flight);
         }
         Location back = inst.returnPoints.remove(p.getUniqueId());
         if (back != null) {

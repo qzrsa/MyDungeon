@@ -89,8 +89,8 @@ public final class ArenaBuilder {
             }
         }
 
-        // 2) 围墙
-        for (int y = floorY + 1; y <= wallTop; y++) {
+        // 2) 玻璃围墙：floorY+1 .. wallTop-1（顶部留一层给天花板）
+        for (int y = floorY + 1; y <= wallTop - 1; y++) {
             for (int i = -half; i <= half; i++) {
                 set(w, i, y, -half, Material.GLASS);
                 set(w, i, y, half, Material.GLASS);
@@ -99,17 +99,22 @@ public final class ArenaBuilder {
             }
         }
 
-        // 3) 照明：沿四边每 8 格放一盏海晶灯（藏在围墙顶下方，避免刺眼）
-        int step = 8;
-        Material lamp = Material.SEA_LANTERN;
-        for (int i = -half + step; i <= half - step; i += step) {
-            set(w, i, wallTop, -half, lamp);
-            set(w, i, wallTop, half, lamp);
-            set(w, -half, wallTop, i, lamp);
-            set(w, half, wallTop, i, lamp);
+        // 3) 玻璃天花板：wallTop 整层封顶，防止玩家飞出
+        for (int x = -half; x <= half; x++) {
+            for (int z = -half; z <= half; z++) {
+                set(w, x, wallTop, z, Material.GLASS);
+            }
         }
 
-        // 4) 中心台座（视觉参照物，方便判断距离）
+        // 4) 照明：天花板内嵌海晶灯，每 8 格一盏，保证整场无暗区
+        int step = 8;
+        for (int x = -half + step; x <= half - step; x += step) {
+            for (int z = -half + step; z <= half - step; z += step) {
+                set(w, x, wallTop, z, Material.SEA_LANTERN);
+            }
+        }
+
+        // 5) 中心台座（视觉参照物，方便判断距离）
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
                 set(w, x, floorY + 1, z, Material.CHISELED_STONE_BRICKS);

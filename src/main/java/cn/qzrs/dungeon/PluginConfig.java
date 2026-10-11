@@ -29,13 +29,17 @@ public class PluginConfig {
     public boolean requireTicket = false;
     public Material ticketMaterial = Material.NETHER_STAR;
     public boolean kickOnDeath = false;
+    /** 进入副本倒计时秒数 */
+    public int enterCountdown = 5;
+    /** 每层结束后的修整秒数 */
+    public int restTime = 30;
 
     // ---------- arena ----------
     public boolean arenaAutoBuild = true;
     public int arenaSize = 48;
     public int arenaFloorY = 64;
-    public int arenaWallHeight = 8;
-    public int arenaClearAbove = 16;
+    public int arenaWallHeight = 24;
+    public int arenaClearAbove = 40;
 
     // ---------- 数据文件 ----------
     public String stageFile = "dungeon1.yml";
@@ -58,6 +62,8 @@ public class PluginConfig {
         boundaryRadius = c.getDouble("dungeon.boundary-radius", 60.0);
         requireTicket = c.getBoolean("dungeon.require-ticket", false);
         kickOnDeath = c.getBoolean("dungeon.kick-on-death", false);
+        enterCountdown = Math.max(1, c.getInt("dungeon.enter-countdown", 5));
+        restTime = Math.max(0, c.getInt("dungeon.rest-time", 30));
 
         String mat = c.getString("dungeon.ticket-material", "NETHER_STAR");
         ticketMaterial = parseMaterial(mat, Material.NETHER_STAR);
@@ -65,8 +71,8 @@ public class PluginConfig {
         arenaAutoBuild = c.getBoolean("arena.auto-build", true);
         arenaSize = Math.max(16, c.getInt("arena.size", 48));
         arenaFloorY = c.getInt("arena.floor-y", 64);
-        arenaWallHeight = Math.max(2, c.getInt("arena.wall-height", 8));
-        arenaClearAbove = Math.max(2, c.getInt("arena.clear-above", 16));
+        arenaWallHeight = Math.max(2, c.getInt("arena.wall-height", 24));
+        arenaClearAbove = Math.max(2, c.getInt("arena.clear-above", 40));
 
         stageFile = firstValue(c.getConfigurationSection("stages"), "dungeon1.yml");
         rewardFile = firstValue(c.getConfigurationSection("rewards"), "dungeon1.yml");

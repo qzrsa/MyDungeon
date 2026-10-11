@@ -36,14 +36,18 @@ dungeon:
   ticket-material: NETHER_STAR
   # 副本内死亡后是否直接送出副本（false = 原地复活，继续打）
   kick-on-death: false
+  # 进入副本倒计时秒数（执行 /dungeon enter 后开始倒计时）
+  enter-countdown: 5
+  # 每层结束后的修整秒数
+  rest-time: 30
 
 arena:
   # 启动时自动生成测试场（虚空里铺地板 + 围墙 + 照明）
   auto-build: true
   size: 48               # 正方形场地边长（格）
   floor-y: 64            # 地板高度
-  wall-height: 8         # 围墙高度
-  clear-above: 16        # 地板上方清空高度
+  wall-height: 24        # 玻璃围墙高度（透明，顶部封玻璃天花板）
+  clear-above: 40        # 地板上方清空高度（需大于墙高）
 
 # 阶段与奖励配置文件名（位于插件数据目录 stages/ 与 rewards/ 下）
 stages:

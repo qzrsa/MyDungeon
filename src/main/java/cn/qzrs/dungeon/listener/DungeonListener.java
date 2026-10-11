@@ -3,6 +3,7 @@ package cn.qzrs.dungeon.listener;
 import cn.qzrs.dungeon.MyDungeon;
 import cn.qzrs.dungeon.arena.ArenaBuilder;
 import cn.qzrs.dungeon.instance.DungeonInstance;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -17,6 +18,7 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 
 import java.util.UUID;
 
@@ -165,5 +167,19 @@ public class DungeonListener implements Listener {
             return;
         }
         e.blockList().clear();
+    }
+
+    /** 阻止外部传送（/back、/tp、/home 等）进入副本世界 */
+    @EventHandler(ignoreCancelled = true)
+    public void onTeleport(PlayerTeleportEvent e) {
+        Location to = e.getTo();
+        if (to == null || !plugin.isDungeonWorld(to.getWorld())) {
+            return;
+        }
+        if (plugin.instances().byPlayer(e.getPlayer().getUniqueId()) != null) {
+            return;   // 副本成员（进入 / 复活 / 边界拉回）放行
+        }
+        e.setCancelled(true);
+        e.getPlayer().sendMessage(ChatColor.RED + "你无法传送到副本世界，请使用 /dungeon enter。");
     }
 }

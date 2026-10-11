@@ -1,5 +1,5 @@
 name: MyDungeon
-version: 0.3.2
+version: 0.3.3
 main: cn.qzrs.dungeon.MyDungeon
 api-version: '1.21'
 authors: [qzrs]

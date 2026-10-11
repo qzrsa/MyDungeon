@@ -110,6 +110,7 @@ public class MyDungeon extends JavaPlugin {
         }
 
         startBossBarTask();
+        startAntiFlyTask();
 
         getLogger().info("MyDungeon 已启用 | 副本世界=" + config.worldName
                 + " | 槽位=" + config.slots
@@ -220,6 +221,10 @@ public class MyDungeon extends JavaPlugin {
                     p.teleport(back);
                 }
                 p.setFireTicks(0);
+                Boolean flight = inst.allowFlightBefore.remove(u);
+                if (flight != null) {
+                    p.setAllowFlight(flight);
+                }
             }
         }
         inst.members.clear();
@@ -254,5 +259,25 @@ public class MyDungeon extends JavaPlugin {
                 inst.bossBar.setProgress(Math.max(0.0, Math.min(1.0, ratio)));
             }
         }, 20L, 10L);
+    }
+
+    /** 副本禁飞：周期检查副本成员，强制取消飞行与鞘翅滑翔 */
+    private void startAntiFlyTask() {
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            for (DungeonInstance inst : instances.all()) {
+                for (UUID u : inst.members) {
+                    Player p = Bukkit.getPlayer(u);
+                    if (p == null || !p.isOnline()) {
+                        continue;
+                    }
+                    if (p.isFlying()) {
+                        p.setFlying(false);
+                    }
+                    if (p.isGliding()) {
+                        p.setGliding(false);
+                    }
+                }
+            }
+        }, 10L, 4L);
     }
 }

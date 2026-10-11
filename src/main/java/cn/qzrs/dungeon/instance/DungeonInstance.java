@@ -36,6 +36,8 @@ public class DungeonInstance {
     public final Map<UUID, DungeonMob> liveMobs = new LinkedHashMap<>();
     /** 玩家进本前的位置，离开/结束时还原 */
     public final Map<UUID, Location> returnPoints = new HashMap<>();
+    /** 玩家进本前的飞行权限，离开时还原（副本内禁飞） */
+    public final Map<UUID, Boolean> allowFlightBefore = new HashMap<>();
 
     public State state = State.IDLE;
     /** 当前阶段下标，-1 表示尚未开始 */

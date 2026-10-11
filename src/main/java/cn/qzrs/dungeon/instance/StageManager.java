@@ -169,17 +169,37 @@ public class StageManager {
         if (!inst.liveMobs.isEmpty()) {
             return;
         }
-        // 本阶段清空 → 下一阶段（延迟 2 秒，给玩家喘息）
         int next = inst.stageIndex + 1;
         if (inst.bossBar != null) {
             inst.bossBar.removeAll();
             inst.bossBar = null;
         }
-        Bukkit.getScheduler().runTaskLater(MyDungeon.get(), () -> {
-            if (inst.state == DungeonInstance.State.RUNNING) {
-                startStage(inst, next);
+
+        boolean lastStage = next >= stages.size();
+        int rest = lastStage ? 0 : MyDungeon.get().config().restTime;
+
+        if (rest <= 0) {
+            Bukkit.getScheduler().runTaskLater(MyDungeon.get(), () -> {
+                if (inst.state == DungeonInstance.State.RUNNING) {
+                    startStage(inst, next);
+                }
+            }, 20L);
+            return;
+        }
+
+        broadcast(inst, ChatColor.GREEN + "✔ 第 " + (inst.stageIndex + 1) + " 层已清空！" + rest + " 秒修整时间...");
+        final int[] left = {rest};
+        Bukkit.getScheduler().runTaskTimer(MyDungeon.get(), task -> {
+            left[0]--;
+            if (left[0] <= 0) {
+                task.cancel();
+                if (inst.state == DungeonInstance.State.RUNNING) {
+                    startStage(inst, next);
+                }
+            } else if (left[0] <= 5 || left[0] % 10 == 0) {
+                broadcast(inst, ChatColor.GRAY + "修整时间还剩 " + left[0] + " 秒...");
             }
-        }, 40L);
+        }, 20L, 20L);
     }
 
     private void onCleared(DungeonInstance inst) {
