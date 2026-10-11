@@ -215,6 +215,16 @@ public class StageManager {
     // 工具
     // ------------------------------------------------------------------
 
+    /** 把卡住的怪拉回场地内的随机安全点（避开台座与玩家），而不是清除掉 */
+    public void relocateToArena(DungeonInstance inst, DungeonMob mob) {
+        if (mob == null || mob.entity == null || mob.entity.isDead()) {
+            return;
+        }
+        Player anchor = firstOnlinePlayer(inst);
+        Location safe = randomSpawnPoint(mob.entity.getWorld(), anchor);
+        mob.entity.teleport(safe);
+    }
+
     private Location randomSpawnPoint(World w, Player avoid) {
         PluginConfig cfg = MyDungeon.get().config();
         int half = Math.max(4, cfg.arenaSize / 2 - 3);

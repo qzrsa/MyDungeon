@@ -8,7 +8,7 @@ plugins {
 }
 
 group = 'cn.qzrs'
-version = '0.3.6'
+version = '0.3.7'
 description = 'Dungeon challenge with self-owned RPG combat engine'
 
 repositories {

@@ -344,9 +344,10 @@ public class MyDungeon extends JavaPlugin {
     }
 
     /**
-     * 卡怪清理：周期检查副本怪是否「越界飞出」（VEX 穿墙飞出玻璃墙 / 掉进虚空）
+     * 卡怪拉回：周期检查副本怪是否「越界飞出」（VEX 穿墙飞出玻璃墙 / 掉进虚空）
      * 或「卡进方块」（刷进中心台座 / 墙体内，且窒息伤害被护盾 cancel 死不了）。
-     * 命中即清理并推进阶段，避免「总有一两只找不到、到不了下一关」。
+     * 命中即把怪拉回场地内随机安全点（不清除，保留继续打），
+     * 同时顺手给燃烧的亡灵怪灭火（防常昼世界被阳光晒死）。
      */
     private void startMobLeashTask() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
@@ -362,6 +363,11 @@ public class MyDungeon extends JavaPlugin {
                     if (mob.entity == null || mob.entity.isDead()) {
                         continue;
                     }
+                    // 清火：副本世界常昼，亡灵怪会被阳光点燃；onMobShield 拦不住
+                    // Arclight 的燃烧伤害，这里直接灭火，防止怪被晒死（scorched to death）。
+                    if (mob.entity.getFireTicks() > 0) {
+                        mob.entity.setFireTicks(0);
+                    }
                     Location loc = mob.entity.getLocation();
                     boolean oob = Math.abs(loc.getX()) > half
                             || Math.abs(loc.getZ()) > half
@@ -371,12 +377,10 @@ public class MyDungeon extends JavaPlugin {
                             && loc.getBlockY() > floorY;
                     if (oob || stuck) {
                         String reason = oob ? "越界飞出" : "卡进方块";
-                        getLogger().info("清理卡住的副本怪：" + mob.template.name + "（" + reason
-                                + " @ " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + "）");
-                        UUID id = mob.entity.getUniqueId();
-                        mob.entity.remove();
-                        instances.unregisterMob(id);
-                        stages().onMobDeath(inst, id);
+                        getLogger().info("拉回卡住的副本怪：" + mob.template.name + "（" + reason
+                                + " @ " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ()
+                                + " 方块=" + loc.getBlock().getType().name() + "）");
+                        stages().relocateToArena(inst, mob);
                     }
                 }
             }
