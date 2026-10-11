@@ -1,0 +1,15 @@
+# Gradle 构建产物
+.gradle/
+build/
+
+# 构建日志
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 系统
+Thumbs.db
+.DS_Store

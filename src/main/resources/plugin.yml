@@ -1,0 +1,19 @@
+name: MyDungeon
+version: 0.2.0
+main: cn.qzrs.dungeon.MyDungeon
+api-version: '1.21'
+authors: [qzrs]
+description: '副本挑战 —— 独立数值体系（自研伤害引擎 + 自定义怪）。副本世界运行在真虚空生成器上，零地形开销'
+softdepend: [Multiverse-Core]
+commands:
+  dungeon:
+    description: 副本挑战命令
+    usage: /dungeon <enter|leave|info|reload>
+    aliases: [dg, fuben]
+permissions:
+  dungeon.use:
+    description: 允许进入副本
+    default: true
+  dungeon.admin:
+    description: 副本管理（reload / 强制结束）
+    default: op

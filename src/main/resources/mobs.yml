@@ -1,0 +1,58 @@
+# ============================================================
+#  怪模板 —— MVP 全部集中在这一个文件
+#  health / damage / armor 会再乘一次 config.yml 里的 mobs.*-scale
+#  entity 取值见 Bukkit EntityType（ZOMBIE / SKELETON / WITHER_SKELETON / SPIDER ...）
+#
+#  v0.2.0：全体数值加强约一倍，并新增精英射手。
+#  若进游戏后仍觉得太脆，优先改 config.yml 的 mobs.health-scale，
+#  不必动这个文件（改完 /dungeon reload 即可）。
+# ============================================================
+
+templates:
+  # ---- 普通怪 ----
+  normal_grunt:
+    name: '&f地窟守卫'
+    entity: ZOMBIE
+    health: 1800
+    damage: 50
+    armor: 30
+    speed: 0.28
+    boss: false
+
+  normal_archer:
+    name: '&f地窟射手'
+    entity: SKELETON
+    health: 1500
+    damage: 60
+    armor: 25
+    speed: 0.30
+    boss: false
+
+  # ---- 精英怪 ----
+  elite_brute:
+    name: '&c精英·碎骨者'
+    entity: ZOMBIE
+    health: 5000
+    damage: 90
+    armor: 55
+    speed: 0.26
+    boss: false
+
+  elite_marksman:
+    name: '&c精英·穿刺者'
+    entity: SKELETON
+    health: 4200
+    damage: 110
+    armor: 45
+    speed: 0.30
+    boss: false
+
+  # ---- 首领 ----
+  boss_warden:
+    name: '&4&l遗忘典狱长'
+    entity: WITHER_SKELETON
+    health: 45000
+    damage: 130
+    armor: 75
+    speed: 0.26
+    boss: true

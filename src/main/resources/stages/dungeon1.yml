@@ -1,0 +1,46 @@
+# ============================================================
+#  副本关卡编排（线性阶段）
+#  规则：按顺序执行，当前阶段的怪全部清空后，才进入下一阶段。
+#  type: WAVE = 普通波次；BOSS = 首领战（会显示 BossBar）
+#
+#  v0.2.0：3 阶段 → 5 阶段（4 波 + 首领），怪量与怪物种类同步提升。
+# ============================================================
+
+id: dungeon1
+name: '&6遗忘地窟'
+
+stages:
+  # ---- 第 1 波：热身，纯近战 ----
+  - type: WAVE
+    name: '&e第一波 · 守卫'
+    spawns:
+      - { mob: normal_grunt, count: 8 }
+
+  # ---- 第 2 波：加入远程 ----
+  - type: WAVE
+    name: '&e第二波 · 弓手加入'
+    spawns:
+      - { mob: normal_grunt, count: 10 }
+      - { mob: normal_archer, count: 4 }
+
+  # ---- 第 3 波：精英现身 ----
+  - type: WAVE
+    name: '&6第三波 · 精英现身'
+    spawns:
+      - { mob: normal_grunt, count: 8 }
+      - { mob: elite_brute, count: 3 }
+
+  # ---- 第 4 波：全场混战 ----
+  - type: WAVE
+    name: '&6第四波 · 全场混战'
+    spawns:
+      - { mob: normal_grunt, count: 10 }
+      - { mob: normal_archer, count: 6 }
+      - { mob: elite_brute, count: 3 }
+      - { mob: elite_marksman, count: 3 }
+
+  # ---- 首领战 ----
+  - type: BOSS
+    name: '&4首领战 · 遗忘典狱长'
+    spawns:
+      - { mob: boss_warden, count: 1 }

@@ -1,0 +1,50 @@
+// MyDungeon —— Minecraft 1.21.1 副本挑战插件（MVP）
+// 目标环境：Arclight NeoForge 1.21.1 / Spigot / Paper（只使用 org.bukkit.* 核心 API）
+// 设计：副本内战斗由自研 CombatEngine 接管，玩家原有属性（Apotheosis / SlashBlade）全部保留，
+//       换算规则改走 RPG 公式，从而绕过原版 80% 减伤封顶与神化词缀的乘法叠加。
+
+plugins {
+    id 'java'
+}
+
+group = 'cn.qzrs'
+version = '0.2.0'
+description = 'Dungeon challenge with self-owned RPG combat engine'
+
+repositories {
+    mavenCentral()
+    // Spigot API
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url = 'https://libraries.minecraft.net/' }
+}
+
+dependencies {
+    // 编译期只需服务端 API，运行期由服务端提供。无第三方依赖 → 普通 jar 即可。
+    compileOnly 'org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:deprecation' << '-Xlint:unchecked'
+}
+
+processResources {
+    filteringCharset = 'UTF-8'
+}
+
+jar {
+    archiveBaseName = 'MyDungeon'
+    archiveVersion = project.version
+    manifest {
+        attributes(
+            'Implementation-Title': 'MyDungeon',
+            'Implementation-Version': project.version
+        )
+    }
+}

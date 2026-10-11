@@ -1,0 +1,13 @@
+# ============================================================
+#  通关奖励池（MVP：固定掉落，后续可扩展为随机池）
+#  material 取值见 Bukkit Material
+# ============================================================
+
+# 每次通关都给
+normal:
+  - { material: DIAMOND, amount: 8 }
+  - { material: GOLD_INGOT, amount: 16 }
+
+# 仅首次通关额外给
+first-clear:
+  - { material: NETHERITE_INGOT, amount: 1 }

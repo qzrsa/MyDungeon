@@ -1,0 +1,113 @@
+package cn.qzrs.dungeon.listener;
+
+import cn.qzrs.dungeon.MyDungeon;
+import cn.qzrs.dungeon.arena.ArenaBuilder;
+import cn.qzrs.dungeon.instance.DungeonInstance;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+
+import java.util.UUID;
+
+/**
+ * 副本边界守卫 + 生命周期钩子。
+ */
+public class DungeonListener implements Listener {
+
+    private final MyDungeon plugin;
+
+    public DungeonListener(MyDungeon plugin) {
+        this.plugin = plugin;
+    }
+
+    /** 副本怪死亡 → 清掉落、推进阶段 */
+    @EventHandler
+    public void onMobDeath(EntityDeathEvent e) {
+        UUID id = e.getEntity().getUniqueId();
+        DungeonInstance inst = plugin.instances().byMob(id);
+        if (inst == null) {
+            return;
+        }
+        // 副本怪不掉原版掉落物，奖励统一由 RewardManager 在通关时发放
+        e.getDrops().clear();
+        e.setDroppedExp(0);
+        plugin.instances().unregisterMob(id);
+        plugin.stages().onMobDeath(inst, id);
+    }
+
+    /** 出界 / 掉出场地 → 拉回落点 */
+    @EventHandler(ignoreCancelled = true)
+    public void onMove(PlayerMoveEvent e) {
+        Player p = e.getPlayer();
+        if (plugin.instances().byPlayer(p.getUniqueId()) == null) {
+            return;
+        }
+        Location to = e.getTo();
+        if (to == null) {
+            return;
+        }
+        double r = plugin.config().boundaryRadius;
+        boolean outside = Math.abs(to.getX()) > r
+                || Math.abs(to.getZ()) > r
+                || to.getY() < plugin.config().arenaFloorY - 20;
+        if (outside) {
+            World w = plugin.dungeonWorld();
+            if (w != null) {
+                p.teleport(ArenaBuilder.spawnLocation(w));
+            }
+        }
+    }
+
+    /** 掉线 → 从副本成员里摘掉；全员离线则结束本场 */
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        Player p = e.getPlayer();
+        DungeonInstance inst = plugin.instances().byPlayer(p.getUniqueId());
+        if (inst == null) {
+            return;
+        }
+        inst.members.remove(p.getUniqueId());
+        inst.returnPoints.remove(p.getUniqueId());
+        if (inst.bossBar != null) {
+            inst.bossBar.removePlayer(p);
+        }
+        if (inst.members.isEmpty()) {
+            plugin.endInstance(inst, "全员离线");
+        }
+    }
+
+    /** 复活点修正：在副本内死亡后仍在副本里复活（或按配置踢出） */
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent e) {
+        Player p = e.getPlayer();
+        DungeonInstance inst = plugin.instances().byPlayer(p.getUniqueId());
+        if (inst == null) {
+            return;
+        }
+        if (plugin.config().kickOnDeath) {
+            Location back = inst.returnPoints.remove(p.getUniqueId());
+            inst.members.remove(p.getUniqueId());
+            if (inst.bossBar != null) {
+                inst.bossBar.removePlayer(p);
+            }
+            if (back != null) {
+                e.setRespawnLocation(back);
+            }
+            p.sendMessage(org.bukkit.ChatColor.RED + "你在副本中阵亡，已被送出。");
+            if (inst.members.isEmpty()) {
+                plugin.endInstance(inst, "全员阵亡");
+            }
+        } else {
+            World w = plugin.dungeonWorld();
+            if (w != null) {
+                e.setRespawnLocation(ArenaBuilder.spawnLocation(w));
+            }
+        }
+    }
+}
