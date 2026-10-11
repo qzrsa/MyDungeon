@@ -218,15 +218,21 @@ public class StageManager {
     private Location randomSpawnPoint(World w, Player avoid) {
         PluginConfig cfg = MyDungeon.get().config();
         int half = Math.max(4, cfg.arenaSize / 2 - 3);
-        for (int attempt = 0; attempt < 12; attempt++) {
+        for (int attempt = 0; attempt < 32; attempt++) {
             int x = ThreadLocalRandom.current().nextInt(-half, half + 1);
             int z = ThreadLocalRandom.current().nextInt(-half, half + 1);
+            // 避开中心台座（-1..1 × -1..1，y=floorY+1 是实心方块，刷进去会窒息卡怪、
+            // 玩家找不到）。这是「总有一只找不到」的根因。
+            if (Math.abs(x) <= 1 && Math.abs(z) <= 1) {
+                continue;
+            }
             Location loc = new Location(w, x + 0.5, cfg.arenaFloorY + 1, z + 0.5);
             if (avoid == null || loc.distanceSquared(avoid.getLocation()) > 64.0) {
                 return loc;
             }
         }
-        return new Location(w, 0.5, cfg.arenaFloorY + 1, 0.5);
+        // 兜底落点：台座外的固定安全点（原 0.5,0.5 正好在台座正中心，同样是坑）
+        return new Location(w, 2.5, cfg.arenaFloorY + 1, 2.5);
     }
 
     private Player firstOnlinePlayer(DungeonInstance inst) {

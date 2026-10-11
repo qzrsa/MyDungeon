@@ -38,8 +38,8 @@ public class PluginConfig {
     public boolean arenaAutoBuild = true;
     public int arenaSize = 48;
     public int arenaFloorY = 64;
-    public int arenaWallHeight = 24;
-    public int arenaClearAbove = 40;
+    public int arenaWallHeight = 44;
+    public int arenaClearAbove = 60;
 
     // ---------- 数据文件 ----------
     public String stageFile = "dungeon1.yml";
@@ -71,8 +71,8 @@ public class PluginConfig {
         arenaAutoBuild = c.getBoolean("arena.auto-build", true);
         arenaSize = Math.max(16, c.getInt("arena.size", 48));
         arenaFloorY = c.getInt("arena.floor-y", 64);
-        arenaWallHeight = Math.max(2, c.getInt("arena.wall-height", 24));
-        arenaClearAbove = Math.max(2, c.getInt("arena.clear-above", 40));
+        arenaWallHeight = Math.max(2, c.getInt("arena.wall-height", 44));
+        arenaClearAbove = Math.max(2, c.getInt("arena.clear-above", 60));
 
         stageFile = firstValue(c.getConfigurationSection("stages"), "dungeon1.yml");
         rewardFile = firstValue(c.getConfigurationSection("rewards"), "dungeon1.yml");
