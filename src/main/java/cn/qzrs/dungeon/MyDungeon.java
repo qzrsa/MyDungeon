@@ -10,7 +10,10 @@ import cn.qzrs.dungeon.listener.DungeonListener;
 import cn.qzrs.dungeon.mob.DungeonMob;
 import cn.qzrs.dungeon.mob.MobTemplate;
 import cn.qzrs.dungeon.reward.RewardManager;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -111,6 +114,8 @@ public class MyDungeon extends JavaPlugin {
 
         startBossBarTask();
         startAntiFlyTask();
+        startProgressTask();
+        startWorldWatchdog();
 
         getLogger().info("MyDungeon 已启用 | 副本世界=" + config.worldName
                 + " | 槽位=" + config.slots
@@ -216,8 +221,9 @@ public class MyDungeon extends JavaPlugin {
         for (UUID u : new ArrayList<>(inst.members)) {
             Player p = Bukkit.getPlayer(u);
             if (p != null && p.isOnline()) {
+                boolean inDungeon = isDungeonWorld(p.getWorld());
                 Location back = inst.returnPoints.get(u);
-                if (back != null) {
+                if (back != null && inDungeon) {
                     p.teleport(back);
                 }
                 p.setFireTicks(0);
@@ -279,5 +285,60 @@ public class MyDungeon extends JavaPlugin {
                 }
             }
         }, 10L, 4L);
+    }
+
+    /**
+     * 进度提示：挑战进行中，副本成员屏幕下方持续显示「第 X/总 层 · 剩余 Y 只」；
+     * 层清空进入修整期时显示「修整中...」。非 RUNNING 槽位不显示。
+     */
+    private void startProgressTask() {
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            int total = stages.stageCount();
+            for (DungeonInstance inst : instances.all()) {
+                if (inst.state != DungeonInstance.State.RUNNING) {
+                    continue;
+                }
+                String bar;
+                if (inst.liveMobs.isEmpty()) {
+                    bar = ChatColor.YELLOW + "修整中...";
+                } else {
+                    bar = ChatColor.AQUA + "第 " + (inst.stageIndex + 1) + "/" + total + " 层"
+                            + ChatColor.WHITE + " · "
+                            + ChatColor.RED + "剩余 " + inst.liveMobs.size() + " 只";
+                }
+                for (UUID u : inst.members) {
+                    Player p = Bukkit.getPlayer(u);
+                    if (p != null && p.isOnline()) {
+                        p.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                                TextComponent.fromLegacyText(bar));
+                    }
+                }
+            }
+        }, 20L, 10L);
+    }
+
+    /**
+     * 世界看门狗：副本世界内已无任何玩家时，把所有槽位重置回第一关。
+     *
+     * <p>这是「成员清空即结束」之外的兜底 —— 万一有人没用 /dungeon leave，
+     * 而是通过其它插件传送走了，成员集合还残留着人，此时世界已空、进度照旧重置。
+     */
+    private void startWorldWatchdog() {
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            World w = dungeonWorld;
+            if (w == null || !w.getPlayers().isEmpty()) {
+                return;
+            }
+            boolean reset = false;
+            for (DungeonInstance inst : instances.all()) {
+                if (!inst.isIdle() || !inst.members.isEmpty()) {
+                    endInstance(inst, "世界无人，重置进度");
+                    reset = true;
+                }
+            }
+            if (reset) {
+                getLogger().info("副本世界已无人，进度已重置（下次进入将从第一关开始）。");
+            }
+        }, 40L, 40L);
     }
 }
