@@ -8,7 +8,12 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -109,5 +114,56 @@ public class DungeonListener implements Listener {
                 e.setRespawnLocation(ArenaBuilder.spawnLocation(w));
             }
         }
+    }
+
+    // ==================================================================
+    // 副本世界保护：禁止破坏 / 放置 / 倒液体 / 爆炸毁方块
+    // 持有 dungeon.build 权限者（默认 op）可绕过，用于建地图。
+    // ==================================================================
+
+    private boolean canEdit(Player p) {
+        if (!plugin.isDungeonWorld(p.getWorld())) {
+            return true;
+        }
+        return p.hasPermission("dungeon.build");
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent e) {
+        if (!canEdit(e.getPlayer())) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent e) {
+        if (!canEdit(e.getPlayer())) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBucketEmpty(PlayerBucketEmptyEvent e) {
+        if (!canEdit(e.getPlayer())) {
+            e.setCancelled(true);
+        }
+    }
+
+    /** 怪物/TNT 等实体爆炸不破坏方块 */
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityExplode(EntityExplodeEvent e) {
+        if (!plugin.isDungeonWorld(e.getLocation().getWorld())) {
+            return;
+        }
+        e.blockList().clear();
+    }
+
+    /** 方块爆炸（如床/重生锚/自设 TNT）不破坏方块 */
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent e) {
+        if (!plugin.isDungeonWorld(e.getBlock().getWorld())) {
+            return;
+        }
+        e.blockList().clear();
     }
 }

@@ -92,10 +92,10 @@ public final class ArenaBuilder {
         // 2) 围墙
         for (int y = floorY + 1; y <= wallTop; y++) {
             for (int i = -half; i <= half; i++) {
-                set(w, i, y, -half, Material.POLISHED_ANDESITE);
-                set(w, i, y, half, Material.POLISHED_ANDESITE);
-                set(w, -half, y, i, Material.POLISHED_ANDESITE);
-                set(w, half, y, i, Material.POLISHED_ANDESITE);
+                set(w, i, y, -half, Material.GLASS);
+                set(w, i, y, half, Material.GLASS);
+                set(w, -half, y, i, Material.GLASS);
+                set(w, half, y, i, Material.GLASS);
             }
         }
 
