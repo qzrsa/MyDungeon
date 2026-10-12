@@ -67,6 +67,9 @@ dungeon:
   rest-time: 30
   # 禁止副本内技能浮空（拔刀剑 Trick Up、空中缓降等）
   anti-float: true
+  # ★ 副本内强制关闭飞行（含 mod 喷气背包）。Mekanism 等喷气背包的推力逻辑
+  #   依赖 Abilities.flying == true 才触发，每 tick 硬关飞行能力即可让它失效。
+  anti-fly: true
   # 连续滞空超过该 tick 数即判定浮空并压回地面（20 tick = 1 秒，正常跳跃约 12 tick，不会误伤）
   anti-float-air-ticks: 15
   # ★ 反浮空「强禁」：只要脚底离地超过这个高度（格）就持续向下压。

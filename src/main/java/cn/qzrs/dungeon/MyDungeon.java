@@ -369,7 +369,16 @@ public class MyDungeon extends JavaPlugin {
                     if (p == null || !p.isOnline()) {
                         continue;
                     }
-                    if (p.isFlying()) {
+                    // ★ 禁飞（含 mod 喷气背包）：Mekanism 等喷气背包的推力逻辑依赖
+                    //   Abilities.flying == true 才触发（反编译 CommonPlayerTickHandler 确认）。
+                    //   所以每 tick 都把飞行能力与飞行状态硬关掉，喷气背包就飞不起来。
+                    //   setAllowFlight(false) 同时关 mayfly 与 flying；setFlying(false) 收尾。
+                    if (cfg.antiFly) {
+                        if (p.getAllowFlight() || p.isFlying()) {
+                            p.setAllowFlight(false);
+                            p.setFlying(false);
+                        }
+                    } else if (p.isFlying()) {
                         p.setFlying(false);
                     }
                     if (p.isGliding()) {

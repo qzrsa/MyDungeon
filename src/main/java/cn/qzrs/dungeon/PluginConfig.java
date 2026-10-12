@@ -64,6 +64,12 @@ public class PluginConfig {
     public int restTime = 30;
     /** 是否禁止副本内的技能浮空（拔刀剑 Trick Up / 空中缓降等） */
     public boolean antiFloat = true;
+    /**
+     * 是否在副本内强制关闭飞行（含 mod 喷气背包）。
+     * <p>Mekanism 等喷气背包的推力逻辑依赖 Abilities.flying == true 才触发，
+     * 每 tick 把飞行能力硬关掉即可让喷气背包失效。
+     */
+    public boolean antiFly = true;
     /** 连续滞空超过该 tick 数即判定为浮空并强制压回地面（20 tick = 1 秒） */
     public int antiFloatAirTicks = 15;
     /**
@@ -130,6 +136,7 @@ public class PluginConfig {
         enterCountdown = Math.max(1, c.getInt("dungeon.enter-countdown", 5));
         restTime = Math.max(0, c.getInt("dungeon.rest-time", 30));
         antiFloat = c.getBoolean("dungeon.anti-float", true);
+        antiFly = c.getBoolean("dungeon.anti-fly", true);
         antiFloatAirTicks = Math.max(5, c.getInt("dungeon.anti-float-air-ticks", 15));
         antiFloatMaxHeight = c.getDouble("dungeon.anti-float-max-height", 2.5);
         antiFloatPullSpeed = c.getDouble("dungeon.anti-float-pull-speed", -1.2);
