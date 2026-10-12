@@ -132,6 +132,11 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         }
 
         slot.returnPoints.put(p.getUniqueId(), p.getLocation().clone());
+        // 记录并重设重生点：副本世界是虚空生成器造的，若玩家在这里死亡，
+        // 原版 respawn 的 copyRespawnPosition 会因"重生世界为 null"抛 NPE。
+        // 把重生点 force 钉到副本场地，死亡时 newWorld 就是副本世界（非 null）。
+        slot.bedSpawns.put(p.getUniqueId(), p.getBedSpawnLocation());
+        p.setBedSpawnLocation(ArenaBuilder.spawnLocation(w), true);
         slot.members.add(p.getUniqueId());
         // 副本禁飞：记录原飞行权限，离开时还原
         slot.allowFlightBefore.put(p.getUniqueId(), p.getAllowFlight());
@@ -187,6 +192,13 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         Location back = inst.returnPoints.remove(p.getUniqueId());
         if (back != null) {
             p.teleport(back);
+        }
+        // 还原进本前的重生点
+        Location bed = inst.bedSpawns.remove(p.getUniqueId());
+        if (bed != null) {
+            p.setBedSpawnLocation(bed, true);
+        } else {
+            p.setBedSpawnLocation(null, true);
         }
         p.setFireTicks(0);
         p.sendMessage(ChatColor.YELLOW + "你已离开副本。");

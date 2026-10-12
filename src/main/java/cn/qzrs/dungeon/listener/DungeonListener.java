@@ -81,6 +81,13 @@ public class DungeonListener implements Listener {
         }
         inst.members.remove(p.getUniqueId());
         inst.returnPoints.remove(p.getUniqueId());
+        // 还原重生点
+        Location bed = inst.bedSpawns.remove(p.getUniqueId());
+        if (bed != null) {
+            p.setBedSpawnLocation(bed, true);
+        } else {
+            p.setBedSpawnLocation(null, true);
+        }
         if (inst.bossBar != null) {
             inst.bossBar.removePlayer(p);
         }
@@ -104,6 +111,13 @@ public class DungeonListener implements Listener {
         if (plugin.config().kickOnDeath) {
             Location back = inst.returnPoints.remove(p.getUniqueId());
             inst.members.remove(p.getUniqueId());
+            // 还原重生点
+            Location bed = inst.bedSpawns.remove(p.getUniqueId());
+            if (bed != null) {
+                p.setBedSpawnLocation(bed, true);
+            } else {
+                p.setBedSpawnLocation(null, true);
+            }
             if (inst.bossBar != null) {
                 inst.bossBar.removePlayer(p);
             }

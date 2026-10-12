@@ -309,6 +309,13 @@ public class MyDungeon extends JavaPlugin {
                 if (flight != null) {
                     p.setAllowFlight(flight);
                 }
+                // 还原进本前的重生点
+                Location bed = inst.bedSpawns.get(u);
+                if (bed != null) {
+                    p.setBedSpawnLocation(bed, true);
+                } else {
+                    p.setBedSpawnLocation(null, true);
+                }
             }
             inst.forgetPlayer(u);
         }

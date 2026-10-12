@@ -39,6 +39,8 @@ public class DungeonInstance {
     public final Map<UUID, DungeonMob> liveMobs = new LinkedHashMap<>();
     /** 玩家进本前的位置，离开/结束时还原 */
     public final Map<UUID, Location> returnPoints = new HashMap<>();
+    /** 玩家进本前的重生点，离开/结束时还原（否则玩家在副本世界死亡会 NPE） */
+    public final Map<UUID, Location> bedSpawns = new HashMap<>();
     /** 玩家进本前的飞行权限，离开时还原（副本内禁飞） */
     public final Map<UUID, Boolean> allowFlightBefore = new HashMap<>();
     /** 玩家连续滞空 tick 数，用于检测拔刀剑等技能浮空 */
@@ -82,6 +84,7 @@ public class DungeonInstance {
         damage.clear();
         damageWindow.clear();
         firstHitMs.clear();
+        bedSpawns.clear();
         if (board != null) {
             board.clear();
             board = null;
@@ -102,7 +105,6 @@ public class DungeonInstance {
         damageWindow.remove(uuid);
         firstHitMs.remove(uuid);
     }
-
     public String describe() {
         return "槽位#" + slotId + " 状态=" + state + " 人数=" + members.size() + " 存活怪=" + liveMobs.size();
     }
