@@ -80,6 +80,15 @@ arena:
   wall-height: 28        # 玻璃围墙高度（透明，顶部封玻璃天花板）
   clear-above: 44        # 地板上方清空高度（需大于墙高）
 
+# 副本内伤害统计计分板（右侧 sidebar）—— 只对副本成员生效，出本自动消失
+scoreboard:
+  enabled: true          # 总开关，false = 完全关闭伤害统计
+  top: 8                 # 排行榜最多显示几名（注意：sidebar 总行数上限 15）
+  refresh-ticks: 10      # 刷新间隔（20 tick = 1 秒，默认 10 = 0.5 秒）
+  dps-window-seconds: 5  # 秒伤统计的滑动窗口（秒）
+  # 标题支持 {layer} / {total} 占位符与 & 颜色码；用 \n 可换行
+  title: '&6&l遗忘地窟 &7· &f第 {layer}/{total} 层'
+
 # 阶段与奖励配置文件名（位于插件数据目录 stages/ 与 rewards/ 下）
 stages:
   dungeon1: dungeon1.yml

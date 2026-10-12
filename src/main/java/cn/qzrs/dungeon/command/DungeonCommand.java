@@ -2,6 +2,7 @@ package cn.qzrs.dungeon.command;
 
 import cn.qzrs.dungeon.MyDungeon;
 import cn.qzrs.dungeon.arena.ArenaBuilder;
+import cn.qzrs.dungeon.board.DamageBoard;
 import cn.qzrs.dungeon.instance.DungeonInstance;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -146,6 +147,18 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         p.setFireTicks(0);
 
         plugin.stages().start(slot);
+        showBoard(slot, p);
+    }
+
+    /** 副本开始后给成员挂伤害统计计分板（懒创建，复用同一块） */
+    private void showBoard(DungeonInstance slot, Player p) {
+        if (!plugin.config().boardEnabled) {
+            return;
+        }
+        if (slot.board == null) {
+            slot.board = new DamageBoard(plugin, slot);
+        }
+        slot.board.show(p);
     }
 
     private boolean leave(CommandSender sender) {
@@ -163,6 +176,10 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         if (inst.bossBar != null) {
             inst.bossBar.removePlayer(p);
         }
+        if (inst.board != null) {
+            inst.board.hide(p);
+        }
+        inst.forgetPlayer(p.getUniqueId());
         Boolean flight = inst.allowFlightBefore.remove(p.getUniqueId());
         if (flight != null) {
             p.setAllowFlight(flight);

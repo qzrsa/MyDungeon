@@ -1,9 +1,12 @@
 package cn.qzrs.dungeon.instance;
 
+import cn.qzrs.dungeon.board.DamageBoard;
 import cn.qzrs.dungeon.mob.DungeonMob;
 import org.bukkit.Location;
 import org.bukkit.boss.BossBar;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -41,6 +44,20 @@ public class DungeonInstance {
     /** 玩家连续滞空 tick 数，用于检测拔刀剑等技能浮空 */
     public final Map<UUID, Integer> airTicks = new HashMap<>();
 
+    // ---------- 伤害统计（只在本场副本内有效，不落盘） ----------
+    /** 玩家 UUID → 本场累计造成的伤害 */
+    public final Map<UUID, Double> damage = new HashMap<>();
+    /**
+     * 玩家 UUID → 最近若干秒的伤害记录，每项 = {时间戳毫秒, 伤害}。
+     * 每次刷新计分板时会把超出窗口的旧项丢掉，所以不会无限增长。
+     */
+    public final Map<UUID, Deque<double[]>> damageWindow = new HashMap<>();
+    /** 玩家 UUID → 首次造成伤害的时间戳，避免刚开打时被整个窗口摊薄 */
+    public final Map<UUID, Long> firstHitMs = new HashMap<>();
+
+    /** 本槽位的伤害统计计分板（null = 尚未创建） */
+    public DamageBoard board;
+
     public State state = State.IDLE;
     /** 当前阶段下标，-1 表示尚未开始 */
     public int stageIndex = -1;
@@ -62,6 +79,13 @@ public class DungeonInstance {
     public void clearRuntime() {
         liveMobs.clear();
         airTicks.clear();
+        damage.clear();
+        damageWindow.clear();
+        firstHitMs.clear();
+        if (board != null) {
+            board.clear();
+            board = null;
+        }
         if (bossBar != null) {
             bossBar.removeAll();
             bossBar = null;
@@ -70,6 +94,13 @@ public class DungeonInstance {
         startTime = 0L;
         completed = false;
         state = State.IDLE;
+    }
+
+    /** 玩家离开本场时清掉他的伤害统计（避免下次进本读到旧数据） */
+    public void forgetPlayer(UUID uuid) {
+        damage.remove(uuid);
+        damageWindow.remove(uuid);
+        firstHitMs.remove(uuid);
     }
 
     public String describe() {

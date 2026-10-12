@@ -69,6 +69,21 @@ public class PluginConfig {
     /** 剩余怪数 <= 该值时给怪加发光，方便玩家找到最后几只（0 = 关闭） */
     public int mobGlowWhenLeft = 5;
 
+    // ---------- 伤害统计计分板 ----------
+    /** 是否在副本内给成员开启右侧伤害统计计分板 */
+    public boolean boardEnabled = true;
+    /** 排行榜最多显示几名（含 BOSS 血条在内的 sidebar 总行数上限是 15） */
+    public int boardTop = 8;
+    /** 计分板刷新间隔（tick，20 = 1 秒） */
+    public int boardRefreshTicks = 10;
+    /** 秒伤统计的滑动窗口秒数 */
+    public int dpsWindowSeconds = 5;
+    /**
+     * 计分板标题，支持占位符 {layer} / {total}（当前层 / 总层数）。
+     * 用 {@code \n} 可换行（第二行起为副标题）。
+     */
+    public String boardTitle = "&6&l遗忘地窟 &7· &f第 {layer}/{total} 层";
+
     // ---------- arena ----------
     public boolean arenaAutoBuild = true;
     public int arenaSize = 48;
@@ -110,6 +125,12 @@ public class PluginConfig {
 
         String mat = c.getString("dungeon.ticket-material", "NETHER_STAR");
         ticketMaterial = parseMaterial(mat, Material.NETHER_STAR);
+
+        boardEnabled = c.getBoolean("scoreboard.enabled", true);
+        boardTop = Math.max(1, Math.min(14, c.getInt("scoreboard.top", 8)));
+        boardRefreshTicks = Math.max(4, c.getInt("scoreboard.refresh-ticks", 10));
+        dpsWindowSeconds = Math.max(1, Math.min(30, c.getInt("scoreboard.dps-window-seconds", 5)));
+        boardTitle = c.getString("scoreboard.title", "&6&l遗忘地窟 &7· &f第 {layer}/{total} 层");
 
         arenaAutoBuild = c.getBoolean("arena.auto-build", true);
         arenaSize = Math.max(16, c.getInt("arena.size", 48));

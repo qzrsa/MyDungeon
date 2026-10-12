@@ -63,6 +63,12 @@ public class CombatEngine implements Listener {
                 dmg *= Math.max(0.0, 1.0 - res * cfg.buffResistancePerLevel);
                 dmg = Math.max(cfg.minDamage, dmg);
             }
+            // 伤害统计：按「实际被扣掉的血量」记，超额那一刀不算进去，
+            // 否则秒杀小怪会把 DPS 统计拉得虚高。
+            double dealt = Math.min(dmg, Math.max(0.0, mobEntity.getHealth()));
+            plugin.instances().recordDamage(
+                    plugin.instances().byMob(mobEntity.getUniqueId()),
+                    attacker.getUniqueId(), dealt);
             e.setDamage(dmg);
             return;
         }

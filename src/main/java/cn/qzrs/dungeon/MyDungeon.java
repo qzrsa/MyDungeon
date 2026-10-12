@@ -135,6 +135,7 @@ public class MyDungeon extends JavaPlugin {
         startBossBarTask();
         startAntiFlyTask();
         startProgressTask();
+        startDamageBoardTask();
         startWorldWatchdog();
         startMobLeashTask();
         checkHealthLimit();
@@ -309,6 +310,7 @@ public class MyDungeon extends JavaPlugin {
                     p.setAllowFlight(flight);
                 }
             }
+            inst.forgetPlayer(u);
         }
         inst.members.clear();
         inst.returnPoints.clear();
@@ -423,6 +425,24 @@ public class MyDungeon extends JavaPlugin {
                 }
             }
         }, 20L, 10L);
+    }
+
+    /**
+     * 伤害统计计分板刷新：只在有副本进行时跑；每人每块板子定时重写。
+     * 间隔读 config 的 scoreboard.refresh-ticks（默认 10 tick = 0.5 秒）。
+     */
+    private void startDamageBoardTask() {
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (noActiveInstance()) {
+                return;
+            }
+            for (DungeonInstance inst : instances.all()) {
+                if (inst.state != DungeonInstance.State.RUNNING || inst.board == null) {
+                    continue;
+                }
+                inst.board.update();
+            }
+        }, 20L, Math.max(4, config.boardRefreshTicks));
     }
 
     /**

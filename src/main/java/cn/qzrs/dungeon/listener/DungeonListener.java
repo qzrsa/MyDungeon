@@ -84,6 +84,10 @@ public class DungeonListener implements Listener {
         if (inst.bossBar != null) {
             inst.bossBar.removePlayer(p);
         }
+        if (inst.board != null) {
+            inst.board.hide(p);
+        }
+        inst.forgetPlayer(p.getUniqueId());
         if (inst.members.isEmpty()) {
             plugin.endInstance(inst, "全员离线");
         }
@@ -103,6 +107,10 @@ public class DungeonListener implements Listener {
             if (inst.bossBar != null) {
                 inst.bossBar.removePlayer(p);
             }
+            if (inst.board != null) {
+                inst.board.hide(p);
+            }
+            inst.forgetPlayer(p.getUniqueId());
             if (back != null) {
                 e.setRespawnLocation(back);
             }
