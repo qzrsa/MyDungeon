@@ -31,20 +31,34 @@ public final class MobSpawner {
     private MobSpawner() {
     }
 
+    /** 生成副本怪（血量走「模板 × 倍率 + 层数加成」公式） */
+    public static DungeonMob spawn(Location loc, MobTemplate t, int layer) {
+        return spawn(loc, t, layer, 0.0);
+    }
+
     /**
      * 生成副本怪。
      *
-     * @param layer 所在层数（从 1 开始）—— 用于按层叠加保底血量
+     * @param layer      所在层数（从 1 开始）—— 用于按层叠加保底血量
+     * @param hpOverride {@code > 0} 时用这个**绝对血量**，完全忽略模板血量与层数加成；
+     *                   否则（0 / 负数）走常规公式。用于给指定层的指定怪钉死血量，
+     *                   例如「第 20 层 BOSS 正好 200 万」。
      */
-    public static DungeonMob spawn(Location loc, MobTemplate t, int layer) {
+    public static DungeonMob spawn(Location loc, MobTemplate t, int layer, double hpOverride) {
         PluginConfig cfg = MyDungeon.get().config();
-        // 按层递增的保底血量：第 N 层每只怪额外加 N × layer-health-step，
-        // 所以第 1 层保底 1W、第 2 层 2W …… 第 10 层 10W。
-        // BOSS 的这部分加成再乘 boss-health-bonus（默认 3 倍），让首领明显更肉。
         int n = Math.max(1, layer);
-        double layerBonus = n * cfg.layerHealthStep
-                * (t.boss ? cfg.bossHealthBonus : 1.0);
-        double hp = Math.max(1.0, t.health * cfg.mobHealthScale + layerBonus);
+        double hp;
+        if (hpOverride > 0) {
+            // 绝对覆盖：改 layer-health-step / boss-health-bonus 都不会影响它，数值稳定
+            hp = hpOverride;
+        } else {
+            // 按层递增的保底血量：第 N 层每只怪额外加 N × layer-health-step，
+            // 所以第 1 层保底 1W、第 2 层 2W …… 第 10 层 10W。
+            // BOSS 的这部分加成再乘 boss-health-bonus（默认 3 倍），让首领明显更肉。
+            double layerBonus = n * cfg.layerHealthStep
+                    * (t.boss ? cfg.bossHealthBonus : 1.0);
+            hp = Math.max(1.0, t.health * cfg.mobHealthScale + layerBonus);
+        }
         double dmg = Math.max(0.0, t.damage * cfg.mobDamageScale);
 
         World w = loc.getWorld();

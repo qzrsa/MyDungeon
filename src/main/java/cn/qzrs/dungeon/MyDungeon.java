@@ -605,6 +605,8 @@ public class MyDungeon extends JavaPlugin {
                     * (t.boss ? config.bossHealthBonus : 1.0);
             maxTemplate = Math.max(maxTemplate, t.health * config.mobHealthScale + layerBonus);
         }
+        // 关卡里用 hp: 钉死的绝对血量也得纳入检查（它不受上面公式约束）
+        maxTemplate = Math.max(maxTemplate, stages().maxHpOverride());
         if (maxTemplate <= 0) {
             return;
         }

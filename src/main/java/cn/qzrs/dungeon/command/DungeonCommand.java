@@ -190,6 +190,11 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "层数血量：第 N 层保底 +" + ChatColor.WHITE
                 + (long) plugin.config().layerHealthStep + "×N"
                 + ChatColor.GRAY + "  BOSS 再×" + ChatColor.WHITE + plugin.config().bossHealthBonus);
+        double override = plugin.stages().maxHpOverride();
+        if (override > 0) {
+            sender.sendMessage(ChatColor.GRAY + "★ 关卡指定血量：最大 " + ChatColor.WHITE
+                    + (long) override + ChatColor.GRAY + "（stages 里的 hp: 覆盖，不受上面公式影响）");
+        }
         sender.sendMessage(ChatColor.GRAY + "怪模板数：" + ChatColor.WHITE + plugin.mobs().size()
                 + ChatColor.GRAY + "  阶段数：" + ChatColor.WHITE + plugin.stages().stageCount());
         sender.sendMessage(ChatColor.GRAY + "进行中的副本：" + ChatColor.WHITE + plugin.instances().runningCount());

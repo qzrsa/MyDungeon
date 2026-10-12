@@ -33,10 +33,13 @@ public class StageManager {
     public static class SpawnDef {
         public final String mobId;
         public final int count;
+        /** {@code > 0} = 该条目指定绝对血量（覆盖模板血量与层数加成）；0 = 走常规公式 */
+        public final double hp;
 
-        public SpawnDef(String mobId, int count) {
+        public SpawnDef(String mobId, int count, double hp) {
             this.mobId = mobId;
             this.count = count;
+            this.hp = hp;
         }
     }
 
@@ -72,6 +75,19 @@ public class StageManager {
         return stages.size();
     }
 
+    /** 所有 spawn 条目里指定的最大绝对血量（0 = 没有任何条目用 hp: 覆盖）。给启动自检用 */
+    public double maxHpOverride() {
+        double max = 0.0;
+        for (StageDef s : stages) {
+            for (SpawnDef sd : s.spawns) {
+                if (sd.hp > max) {
+                    max = sd.hp;
+                }
+            }
+        }
+        return max;
+    }
+
     // ------------------------------------------------------------------
     // 加载
     // ------------------------------------------------------------------
@@ -92,8 +108,10 @@ public class StageManager {
                     if (o instanceof Map<?, ?> sm) {
                         String mobId = str(sm.get("mob"), "");
                         int count = toInt(sm.get("count"), 1);
+                        // hp: 可选 —— 指定该怪在本层的绝对血量（如 BOOS 单独钉死 200W）
+                        double hp = toDouble(sm.get("hp"), 0.0);
                         if (!mobId.isBlank() && count > 0) {
-                            def.spawns.add(new SpawnDef(mobId, count));
+                            def.spawns.add(new SpawnDef(mobId, count, hp));
                         }
                     }
                 }
@@ -152,7 +170,7 @@ public class StageManager {
             Player anchor = firstOnlinePlayer(inst);
             for (int i = 0; i < sd.count; i++) {
                 Location loc = randomSpawnPoint(w, anchor);
-                DungeonMob mob = MobSpawner.spawn(loc, template, index + 1);
+                DungeonMob mob = MobSpawner.spawn(loc, template, index + 1, sd.hp);
                 if (mob != null) {
                     MyDungeon.get().instances().registerMob(inst, mob);
                 }
@@ -274,6 +292,17 @@ public class StageManager {
         }
         try {
             return Integer.parseInt(String.valueOf(o));
+        } catch (NumberFormatException ex) {
+            return def;
+        }
+    }
+
+    private static double toDouble(Object o, double def) {
+        if (o instanceof Number n) {
+            return n.doubleValue();
+        }
+        try {
+            return Double.parseDouble(String.valueOf(o));
         } catch (NumberFormatException ex) {
             return def;
         }

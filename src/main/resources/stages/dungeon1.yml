@@ -10,8 +10,12 @@
 #    ③ 层数 buff —— config.yml 的 mobs.tier-buffs（6 / 11 / 16 层各上一档）
 #  所以 11 层之后不只是怪更多，而是「更肉 + 更快 + 减伤」三管齐下。
 #
+#  ④ 绝对血量覆盖（v0.3.15）—— spawn 条目可写 hp: <数字> 钉死单只怪的绝对血量，
+#     此时忽略模板血量与层数加成。用于让最终 BOSS 血量精确可控（如 20 层 = 200W）。
+#
 #  v0.3.14：由 10 层扩到 20 层，新增 11~20 层与三种怪
-#           （精英·弩炮手 / 精英·巫后 / 巫妖之王），全 20 层共约 520 只怪。
+#           （精英·弩炮手 / 精英·巫后 / 巫妖之王），全 20 层共约 530 只怪。
+#  v0.3.15：第 20 层 BOSS 血量钉死 200W。
 # ============================================================
 
 id: dungeon1
@@ -159,7 +163,8 @@ stages:
   - type: BOSS
     name: '&4&l第 20 层 · 终末之厅·极'
     spawns:
-      - { mob: boss_ravager, count: 1 }
+      # hp: 绝对血量覆盖 —— 200 万，不受 layer-health-step / boss-health-bonus 影响
+      - { mob: boss_ravager, count: 1, hp: 2000000 }
       - { mob: elite_vex, count: 16 }
       - { mob: elite_witch, count: 6 }
       - { mob: elite_marksman, count: 10 }
