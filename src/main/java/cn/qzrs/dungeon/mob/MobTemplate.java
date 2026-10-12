@@ -5,6 +5,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -21,9 +22,12 @@ public class MobTemplate {
     public final double armor;
     public final double speed;
     public final boolean boss;
+    /** 永久携带的药水效果：效果名（小写，如 speed / resistance）→ 等级（0 = I 级） */
+    public final Map<String, Integer> buffs;
 
     public MobTemplate(String id, String name, EntityType entityType,
-                       double health, double damage, double armor, double speed, boolean boss) {
+                       double health, double damage, double armor, double speed, boolean boss,
+                       Map<String, Integer> buffs) {
         this.id = id;
         this.name = name;
         this.entityType = entityType;
@@ -32,6 +36,7 @@ public class MobTemplate {
         this.armor = armor;
         this.speed = speed;
         this.boss = boss;
+        this.buffs = buffs;
     }
 
     /** 从 mobs.yml 的 templates 段读出全部模板；解析失败的条目会被跳过并打印原因。 */
@@ -61,9 +66,32 @@ public class MobTemplate {
                     s.getDouble("damage", 10.0),
                     s.getDouble("armor", 0.0),
                     s.getDouble("speed", 0.23),
-                    s.getBoolean("boss", false)
+                    s.getBoolean("boss", false),
+                    readBuffs(s)
             ));
         }
         return map;
+    }
+
+    /**
+     * 读 mobs.yml 里的 buffs 段。写成 YAML 映射最自然：
+     * <pre>
+     *   buffs:
+     *     speed: 1              # 速度 II
+     *     resistance: 0         # 抗性提升 I
+     *     fire_resistance: 0
+     * </pre>
+     * 等级从 0 起（和原版的 amplifier 一致），0 就是 I 级。
+     */
+    private static Map<String, Integer> readBuffs(ConfigurationSection s) {
+        Map<String, Integer> buffs = new LinkedHashMap<>();
+        ConfigurationSection bs = s.getConfigurationSection("buffs");
+        if (bs == null) {
+            return buffs;
+        }
+        for (String effect : bs.getKeys(false)) {
+            buffs.put(effect.toLowerCase(Locale.ROOT), Math.max(0, bs.getInt(effect)));
+        }
+        return buffs;
     }
 }

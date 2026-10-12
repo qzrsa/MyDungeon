@@ -21,6 +21,11 @@ combat:
   # 是否在副本内屏蔽神化（Apotheosis）的"伤害减免类"词缀。
   # 若实测发现减伤仍被叠乘、怪打不动，把这里改成 true 再 /dungeon reload。
   block-apoth-damage-reduction: false
+  # ★ 怪身上「抗性提升 / 力量」每级折算多少。
+  #   副本伤害由本插件引擎接管（用 setDamage 覆盖），原版不会自动应用这两个效果，
+  #   所以必须在这里配 —— 否则 mobs.yml 里写了 resistance / strength 也完全白写。
+  buff-resistance-per-level: 0.15   # 每级减伤 15%（I 级 -15%，II 级 -30%）
+  buff-strength-per-level: 0.15     # 每级增伤 15%
 
 # 怪物全局缩放 —— 手感调参主开关，不用改代码、不用重编译
 mobs:
@@ -33,6 +38,15 @@ mobs:
   # BOSS 的"层数加成"再乘这个倍率 —— 首领明显比同层杂兵更肉。
   #   3.0 → 第 10 层终末首领 = 150000(模板) + 10×10000×3 = 450000
   boss-health-bonus: 3.0
+  # ★ 按层数档位给「所有怪」叠加的 buff（key = 起始层，取不超过当前层的最大档）。
+  #   会和 mobs.yml 里模板自带的 buffs 合并，同一种效果取更高级别。
+  #   等级从 0 起（0 = I 级）。可用：speed / resistance / strength / fire_resistance
+  #   / regeneration / absorption / jump_boost / invisibility ...
+  #   想更狠就继续加档位，例如再加一行 `19: { speed: 2, resistance: 1 }`
+  tier-buffs:
+    6:  { fire_resistance: 0 }                             # 6 层起：抗火
+    11: { fire_resistance: 0, speed: 0 }                   # 11 层起：+ 速度 I
+    16: { fire_resistance: 0, speed: 1, resistance: 0 }    # 16 层起：速度 II + 抗性 I
 
 dungeon:
   world: dungeon_01      # 副本世界名（不存在会自动用虚空生成器创建）

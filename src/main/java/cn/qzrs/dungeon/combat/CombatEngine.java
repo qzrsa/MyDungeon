@@ -14,6 +14,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 /**
  * 战斗接管 —— 副本内所有伤害都从这里走。
@@ -54,6 +56,13 @@ public class CombatEngine implements Listener {
             double atk = attributeOf(attacker, Attribute.GENERIC_ATTACK_DAMAGE, 1.0);
             double dmg = DamageFormula.compute(atk, mob.template.armor, cfg.armorK,
                     cfg.damageMultiplier, cfg.minDamage);
+            // 怪身上的「抗性提升」：副本伤害由本引擎 setDamage() 覆盖，原版不会自动
+            // 折算这个减伤，必须手动算 —— 否则给怪配了 resistance 完全没效果。
+            int res = potionLevel(mobEntity, PotionEffectType.RESISTANCE);
+            if (res > 0) {
+                dmg *= Math.max(0.0, 1.0 - res * cfg.buffResistancePerLevel);
+                dmg = Math.max(cfg.minDamage, dmg);
+            }
             e.setDamage(dmg);
             return;
         }
@@ -67,8 +76,22 @@ public class CombatEngine implements Listener {
             double armor = attributeOf(defender, Attribute.GENERIC_ARMOR, 0.0);
             double dmg = DamageFormula.compute(mob.scaledDamage, armor, cfg.armorK,
                     cfg.damageMultiplier, cfg.minDamage);
+            // 怪身上的「力量」：同上，必须手动折算
+            int str = potionLevel(le, PotionEffectType.STRENGTH);
+            if (str > 0) {
+                dmg *= 1.0 + str * cfg.buffStrengthPerLevel;
+            }
             e.setDamage(dmg);
         }
+    }
+
+    /**
+     * 读实体身上某药水效果的「级数」：I 级返回 1，II 级返回 2，没有就返回 0。
+     * <p>原版的 amplifier 从 0 起算，这里 +1 换成人类习惯的说法。
+     */
+    private static int potionLevel(LivingEntity le, PotionEffectType type) {
+        PotionEffect effect = le.getPotionEffect(type);
+        return effect == null ? 0 : effect.getAmplifier() + 1;
     }
 
     /**

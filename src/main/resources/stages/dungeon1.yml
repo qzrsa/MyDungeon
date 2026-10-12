@@ -1,17 +1,24 @@
 # ============================================================
-#  副本关卡编排 —— 十层试炼（v0.3.1）
+#  副本关卡编排 —— 二十层试炼（v0.3.14）
 #  规则：按顺序执行，当前层的怪全部清空后，才进入下一层。
 #  type: WAVE = 普通层；BOSS = 首领层（顶部显示 BossBar）
 #  注意：同一层里请只放 1 个 boss: true 的怪 —— 血条只跟踪第一个。
 #
-#  v0.3.1：各层怪数量整体上调，一场共约 230 只。
+#  难度曲线由三层叠加而成：
+#    ① 层数血量 —— config.yml 的 mobs.layer-health-step（第 N 层保底 +N×1W）
+#    ② 模板 buff —— mobs.yml 里每个怪自带的药水效果
+#    ③ 层数 buff —— config.yml 的 mobs.tier-buffs（6 / 11 / 16 层各上一档）
+#  所以 11 层之后不只是怪更多，而是「更肉 + 更快 + 减伤」三管齐下。
+#
+#  v0.3.14：由 10 层扩到 20 层，新增 11~20 层与三种怪
+#           （精英·弩炮手 / 精英·巫后 / 巫妖之王），全 20 层共约 520 只怪。
 # ============================================================
 
 id: dungeon1
-name: '&6遗忘地窟 · 十层试炼'
+name: '&6遗忘地窟 · 二十层试炼'
 
 stages:
-  # ---------- 第 1~3 层：普通杂兵 ----------
+  # ================= 第一幕 · 前哨（1~5 层）=================
   - type: WAVE
     name: '&e第 1 层 · 入口守卫'
     spawns:
@@ -29,7 +36,6 @@ stages:
       - { mob: husk, count: 12 }
       - { mob: spider, count: 10 }
 
-  # ---------- 第 4~5 层：中级怪 ----------
   - type: WAVE
     name: '&6第 4 层 · 溺亡回廊'
     spawns:
@@ -44,7 +50,7 @@ stages:
       - { mob: silverfish, count: 16 }
       - { mob: husk, count: 10 }
 
-  # ---------- 第 6~7 层：强敌 ----------
+  # ================= 第二幕 · 熔炉与祭坛（6~8 层）=================
   - type: WAVE
     name: '&6第 6 层 · 熔岩熔炉'
     spawns:
@@ -59,7 +65,6 @@ stages:
       - { mob: cave_spider, count: 12 }
       - { mob: stray, count: 10 }
 
-  # ---------- 第 8 层：精英前哨 ----------
   - type: WAVE
     name: '&c第 8 层 · 精英前哨'
     spawns:
@@ -67,7 +72,7 @@ stages:
       - { mob: elite_marksman, count: 6 }
       - { mob: elite_vex, count: 10 }
 
-  # ---------- 第 9 层：小首领 ----------
+  # ================= 第三幕 · 双子首领（9~10 层）=================
   - type: BOSS
     name: '&4第 9 层 · 典狱长'
     spawns:
@@ -75,10 +80,86 @@ stages:
       - { mob: elite_piglin_brute, count: 6 }
       - { mob: elite_ravager, count: 3 }
 
-  # ---------- 第 10 层：最终首领 ----------
   - type: BOSS
     name: '&4&l第 10 层 · 终末之厅'
     spawns:
       - { mob: boss_ravager, count: 1 }
       - { mob: elite_vex, count: 10 }
       - { mob: elite_marksman, count: 8 }
+
+  # ================= 第四幕 · 深入（11~14 层）=================
+  - type: WAVE
+    name: '&c第 11 层 · 弩炮长廊'
+    spawns:
+      - { mob: elite_pillager, count: 8 }
+      - { mob: archer, count: 14 }
+      - { mob: stray, count: 10 }
+
+  - type: WAVE
+    name: '&c第 12 层 · 巫后巢穴'
+    spawns:
+      - { mob: elite_witch, count: 5 }
+      - { mob: witch, count: 8 }
+      - { mob: cave_spider, count: 14 }
+
+  - type: WAVE
+    name: '&c第 13 层 · 熔火深渊'
+    spawns:
+      - { mob: blaze, count: 14 }
+      - { mob: piglin, count: 14 }
+      - { mob: creeper, count: 10 }
+
+  - type: WAVE
+    name: '&c第 14 层 · 屠戮竞技场'
+    spawns:
+      - { mob: elite_brute, count: 10 }
+      - { mob: elite_piglin_brute, count: 4 }
+      - { mob: silverfish, count: 20 }
+
+  # ================= 第五幕 · 巫妖（15 层）=================
+  - type: BOSS
+    name: '&4&l第 15 层 · 巫妖之门'
+    spawns:
+      - { mob: boss_lich, count: 1 }
+      - { mob: elite_witch, count: 4 }
+      - { mob: elite_vex, count: 12 }
+
+  # ================= 第六幕 · 深渊回响（16~18 层）=================
+  - type: WAVE
+    name: '&c第 16 层 · 虚空回响'
+    spawns:
+      - { mob: elite_vex, count: 16 }
+      - { mob: elite_marksman, count: 10 }
+      - { mob: elite_pillager, count: 6 }
+
+  - type: WAVE
+    name: '&c第 17 层 · 不朽军阵'
+    spawns:
+      - { mob: elite_ravager, count: 5 }
+      - { mob: elite_piglin_brute, count: 8 }
+      - { mob: elite_brute, count: 10 }
+
+  - type: WAVE
+    name: '&c第 18 层 · 霜与火'
+    spawns:
+      - { mob: elite_witch, count: 6 }
+      - { mob: blaze, count: 12 }
+      - { mob: stray, count: 14 }
+      - { mob: elite_pillager, count: 6 }
+
+  # ================= 终幕 · 双首领（19~20 层）=================
+  - type: BOSS
+    name: '&4&l第 19 层 · 典狱长·觉醒'
+    spawns:
+      - { mob: boss_warden, count: 1 }
+      - { mob: elite_ravager, count: 6 }
+      - { mob: elite_piglin_brute, count: 8 }
+      - { mob: elite_vex, count: 8 }
+
+  - type: BOSS
+    name: '&4&l第 20 层 · 终末之厅·极'
+    spawns:
+      - { mob: boss_ravager, count: 1 }
+      - { mob: elite_vex, count: 16 }
+      - { mob: elite_witch, count: 6 }
+      - { mob: elite_marksman, count: 10 }

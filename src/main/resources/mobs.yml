@@ -1,20 +1,29 @@
 # ============================================================
-#  怪模板（v0.3.0）
+#  怪模板（v0.3.14）
 # ------------------------------------------------------------
 #  档位：
-#    tier1  普通杂兵   —— 第 1~3 层
-#    tier2  中级怪     —— 第 4~5 层
-#    tier3  强敌       —— 第 6~7 层
-#    elite  精英       —— 第 8~10 层
-#    boss   首领       —— 第 9、10 层（boss: true 才显示顶部血条）
+#    tier1  普通杂兵   —— 第 1~5 层
+#    tier2  中级怪     —— 第 4~7 层
+#    tier3  强敌       —— 第 6~8 层
+#    elite  精英       —— 第 8~20 层
+#    boss   首领       —— 第 9、10、15、19、20 层（boss: true 才显示顶部血条）
 #
 #  health / damage / armor 会再乘一次 config.yml 里的 mobs.*-scale
 #  同一层请只放 1 个 boss: true 的怪 —— 血条只跟踪第一个
+#
+#  ★ buffs = 怪永久携带的药水效果，格式「效果名: 等级」，等级从 0 起（0 = I 级）
+#    常用：speed / resistance（减伤）/ strength（增伤）/ fire_resistance
+#          regeneration（回血）/ absorption（额外血）/ jump_boost / invisibility
+#    ⚠ resistance 与 strength 的数值折算写在 config.yml 的 combat.buff-*-per-level，
+#      因为副本伤害由本插件引擎 setDamage() 接管，原版不会自动应用这两个效果
+#    ★ config.yml 的 mobs.tier-buffs 还会按层数再叠一层 buff，与本表合并、同种取更高级
 #
 #  设计约束（副本引擎相关，改怪种类时请遵守）：
 #   1. 副本怪只吃玩家伤害，其余伤害源一律免除，不怕火烧 / 摔落 / 互炸
 #   2. 远程怪与投掷物的伤害会自动追溯到发射者，同样走 RPG 公式
 #   3. CREEPER 的爆炸伤害直接用下表 damage 值，不按原版爆心距离衰减
+#   4. 别用会「转化 / 攻击同类」的怪（HOGLIN 在主世界会变 ZOGLIN、WITHER 会打其他怪），
+#      它们会把关卡流程搅乱
 # ============================================================
 
 templates:
@@ -54,6 +63,8 @@ templates:
     armor: 18
     speed: 0.32
     boss: false
+    buffs:
+      speed: 0
 
   # ---------------- tier2 · 中级怪 ----------------
   drowned:
@@ -82,6 +93,8 @@ templates:
     armor: 20
     speed: 0.28
     boss: false
+    buffs:
+      speed: 0
 
   silverfish:
     name: '&8蚀骨虫'
@@ -91,6 +104,8 @@ templates:
     armor: 10
     speed: 0.40
     boss: false
+    buffs:
+      speed: 1
 
   cave_spider:
     name: '&2剧毒蛛'
@@ -100,6 +115,8 @@ templates:
     armor: 22
     speed: 0.36
     boss: false
+    buffs:
+      speed: 0
 
   # ---------------- tier3 · 强敌 ----------------
   piglin:
@@ -110,6 +127,8 @@ templates:
     armor: 40
     speed: 0.27
     boss: false
+    buffs:
+      fire_resistance: 0
 
   blaze:
     name: '&e烈焰使'
@@ -119,6 +138,8 @@ templates:
     armor: 35
     speed: 0.26
     boss: false
+    buffs:
+      fire_resistance: 0
 
   witch:
     name: '&5炼金女巫'
@@ -128,6 +149,9 @@ templates:
     armor: 30
     speed: 0.25
     boss: false
+    buffs:
+      fire_resistance: 0
+      resistance: 0
 
   # ---------------- elite · 精英 ----------------
   elite_brute:
@@ -138,6 +162,9 @@ templates:
     armor: 60
     speed: 0.30
     boss: false
+    buffs:
+      strength: 0
+      speed: 0
 
   elite_marksman:
     name: '&c精英·穿刺者'
@@ -147,6 +174,9 @@ templates:
     armor: 55
     speed: 0.32
     boss: false
+    buffs:
+      strength: 0
+      fire_resistance: 0
 
   elite_vex:
     name: '&c精英·噬魂鬼'
@@ -156,6 +186,9 @@ templates:
     armor: 50
     speed: 0.40
     boss: false
+    buffs:
+      strength: 1
+      speed: 1
 
   elite_piglin_brute:
     name: '&c精英·猪灵战将'
@@ -165,6 +198,10 @@ templates:
     armor: 75
     speed: 0.28
     boss: false
+    buffs:
+      strength: 1
+      resistance: 0
+      fire_resistance: 0
 
   elite_ravager:
     name: '&c精英·破坏者'
@@ -174,6 +211,35 @@ templates:
     armor: 80
     speed: 0.30
     boss: false
+    buffs:
+      strength: 1
+      resistance: 1
+      speed: 0
+
+  elite_pillager:
+    name: '&c精英·弩炮手'
+    entity: PILLAGER
+    health: 7000
+    damage: 145
+    armor: 45
+    speed: 0.34
+    boss: false
+    buffs:
+      strength: 1
+      speed: 1
+
+  elite_witch:
+    name: '&c精英·巫后'
+    entity: WITCH
+    health: 9000
+    damage: 120
+    armor: 60
+    speed: 0.30
+    boss: false
+    buffs:
+      resistance: 1
+      regeneration: 0
+      fire_resistance: 0
 
   # ---------------- boss · 首领 ----------------
   boss_warden:
@@ -184,6 +250,25 @@ templates:
     armor: 90
     speed: 0.28
     boss: true
+    buffs:
+      strength: 1
+      resistance: 1
+      speed: 0
+      regeneration: 0
+
+  boss_lich:
+    name: '&4&l巫妖之王'
+    entity: EVOKER
+    health: 100000
+    damage: 220
+    armor: 95
+    speed: 0.28
+    boss: true
+    buffs:
+      strength: 1
+      resistance: 2
+      regeneration: 1
+      speed: 0
 
   boss_ravager:
     name: '&4&l终末吞噬者'
@@ -193,3 +278,8 @@ templates:
     armor: 110
     speed: 0.32
     boss: true
+    buffs:
+      strength: 2
+      resistance: 1
+      speed: 1
+      absorption: 2

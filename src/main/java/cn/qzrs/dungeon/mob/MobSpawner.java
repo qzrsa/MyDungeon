@@ -4,11 +4,20 @@ import cn.qzrs.dungeon.MyDungeon;
 import cn.qzrs.dungeon.PluginConfig;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * 按模板生成副本怪。
@@ -68,7 +77,58 @@ public final class MobSpawner {
             setAttr(le, Attribute.GENERIC_MOVEMENT_SPEED, t.speed);
         }
 
+        applyBuffs(le, t, n);
+
         return new DungeonMob(le, t, hp, dmg);
+    }
+
+    /**
+     * 给怪挂永久药水效果：模板自带 buff + 当前层数档位的 buff，同一种取更高级别。
+     *
+     * <p>持续时间用 {@code Integer.MAX_VALUE}（约 3.4 年），等于无限；
+     * 瞬时类效果（如 instant_health）没有意义，直接跳过。
+     * 等级 0 = I 级，与原版的 amplifier 一致。
+     */
+    private static void applyBuffs(LivingEntity le, MobTemplate t, int layer) {
+        PluginConfig cfg = MyDungeon.get().config();
+        Map<String, Integer> merged = new LinkedHashMap<>(tierBuffsFor(cfg, layer));
+        for (Map.Entry<String, Integer> e : t.buffs.entrySet()) {
+            merged.merge(e.getKey(), e.getValue(), Math::max);
+        }
+        for (Map.Entry<String, Integer> e : merged.entrySet()) {
+            PotionEffectType type = resolveEffect(e.getKey());
+            if (type == null || type.isInstant()) {
+                continue;
+            }
+            le.addPotionEffect(new PotionEffect(
+                    type, Integer.MAX_VALUE, e.getValue(), false, false, false));
+        }
+    }
+
+    /** 取「起始层 <= layer」里起始层最大的那一档 buff 表 */
+    private static Map<String, Integer> tierBuffsFor(PluginConfig cfg, int layer) {
+        Map<String, Integer> best = Collections.emptyMap();
+        int bestFrom = Integer.MIN_VALUE;
+        for (Map.Entry<Integer, Map<String, Integer>> e : cfg.tierBuffs.entrySet()) {
+            if (e.getKey() <= layer && e.getKey() > bestFrom) {
+                bestFrom = e.getKey();
+                best = e.getValue();
+            }
+        }
+        return best;
+    }
+
+    /** 把 "speed" / "fire_resistance" 这类名字解析成药水效果类型 */
+    private static PotionEffectType resolveEffect(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        String key = name.trim().toLowerCase(Locale.ROOT);
+        PotionEffectType type = Registry.EFFECT.get(NamespacedKey.minecraft(key));
+        if (type != null) {
+            return type;
+        }
+        return PotionEffectType.getByName(key.toUpperCase(Locale.ROOT));
     }
 
     private static void setAttr(LivingEntity le, Attribute attr, double value) {

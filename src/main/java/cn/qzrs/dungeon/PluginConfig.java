@@ -1,7 +1,12 @@
 package cn.qzrs.dungeon;
 
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * config.yml 的强类型映射。所有调参入口集中在这里，
@@ -14,6 +19,14 @@ public class PluginConfig {
     public double damageMultiplier = 1.0;
     public double minDamage = 1.0;
     public boolean blockApothReduction = false;
+    /**
+     * 怪身上「抗性提升（resistance）」每级额外减伤的比例。
+     * <p>★ 副本内伤害由本插件的引擎 setDamage() 覆盖，原版的抗性提升不会自动生效，
+     * 必须在这里手动折算 —— 否则给怪配了 resistance 也白配。
+     */
+    public double buffResistancePerLevel = 0.15;
+    /** 怪身上「力量（strength）」每级额外增伤的比例，同上需手动折算 */
+    public double buffStrengthPerLevel = 0.15;
 
     // ---------- mobs ----------
     public double mobHealthScale = 1.0;
@@ -22,6 +35,15 @@ public class PluginConfig {
     public double layerHealthStep = 10000.0;
     /** BOSS 的层数加成额外乘这个倍率 —— 让首领明显比同层杂兵更肉 */
     public double bossHealthBonus = 3.0;
+    /**
+     * 按层数档位给怪叠加的药水效果。key = 起始层数，取「不超过当前层的最大档」。
+     * <pre>
+     *   tier-buffs:
+     *     6:  { fire_resistance: 0 }
+     *     11: { fire_resistance: 0, speed: 0 }
+     * </pre>
+     */
+    public final Map<Integer, Map<String, Integer>> tierBuffs = new LinkedHashMap<>();
 
     // ---------- dungeon ----------
     public String worldName = "dungeon_01";
@@ -60,11 +82,14 @@ public class PluginConfig {
         damageMultiplier = c.getDouble("combat.damage-multiplier", 1.0);
         minDamage = c.getDouble("combat.min-damage", 1.0);
         blockApothReduction = c.getBoolean("combat.block-apoth-damage-reduction", false);
+        buffResistancePerLevel = clamp01(c.getDouble("combat.buff-resistance-per-level", 0.15));
+        buffStrengthPerLevel = Math.max(0.0, c.getDouble("combat.buff-strength-per-level", 0.15));
 
         mobHealthScale = c.getDouble("mobs.health-scale", 1.0);
         mobDamageScale = c.getDouble("mobs.damage-scale", 1.0);
         layerHealthStep = Math.max(0.0, c.getDouble("mobs.layer-health-step", 10000.0));
         bossHealthBonus = Math.max(1.0, c.getDouble("mobs.boss-health-bonus", 3.0));
+        loadTierBuffs(c);
 
         worldName = c.getString("dungeon.world", "dungeon_01");
         slots = Math.max(1, c.getInt("dungeon.slots", 1));
@@ -105,6 +130,36 @@ public class PluginConfig {
             }
         }
         return def;
+    }
+
+    /** 读 mobs.tier-buffs：起始层 → 药水效果表（效果名 → 等级） */
+    private void loadTierBuffs(FileConfiguration c) {
+        tierBuffs.clear();
+        ConfigurationSection root = c.getConfigurationSection("mobs.tier-buffs");
+        if (root == null) {
+            return;
+        }
+        for (String key : root.getKeys(false)) {
+            ConfigurationSection sec = root.getConfigurationSection(key);
+            if (sec == null) {
+                continue;
+            }
+            int from;
+            try {
+                from = Integer.parseInt(key.trim());
+            } catch (NumberFormatException ex) {
+                continue;
+            }
+            Map<String, Integer> effects = new LinkedHashMap<>();
+            for (String effect : sec.getKeys(false)) {
+                effects.put(effect.toLowerCase(Locale.ROOT), Math.max(0, sec.getInt(effect)));
+            }
+            tierBuffs.put(from, effects);
+        }
+    }
+
+    private static double clamp01(double v) {
+        return Math.max(0.0, Math.min(1.0, v));
     }
 
     private static Material parseMaterial(String name, Material def) {
