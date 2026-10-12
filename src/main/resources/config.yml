@@ -59,8 +59,7 @@ dungeon:
   boundary-radius: 60    # 玩家活动半径，超出会被拉回
   require-ticket: false  # 是否需要门票物品
   ticket-material: NETHER_STAR
-  # 副本内死亡后是否直接送出副本（false = 原地复活，继续打）
-  kick-on-death: false
+  # ★ 副本内死亡 = 直接退出副本，复活点交给其他插件 / 原版接管（不再原地复活）
   # 进入副本倒计时秒数（执行 /dungeon enter 后开始倒计时）
   enter-countdown: 5
   # 每层结束后的修整秒数

@@ -57,7 +57,6 @@ public class PluginConfig {
     public double boundaryRadius = 60.0;
     public boolean requireTicket = false;
     public Material ticketMaterial = Material.NETHER_STAR;
-    public boolean kickOnDeath = false;
     /** 进入副本倒计时秒数 */
     public int enterCountdown = 5;
     /** 每层结束后的修整秒数 */
@@ -132,7 +131,6 @@ public class PluginConfig {
         spawnZ = c.getDouble("dungeon.spawn.z", 0.5);
         boundaryRadius = c.getDouble("dungeon.boundary-radius", 60.0);
         requireTicket = c.getBoolean("dungeon.require-ticket", false);
-        kickOnDeath = c.getBoolean("dungeon.kick-on-death", false);
         enterCountdown = Math.max(1, c.getInt("dungeon.enter-countdown", 5));
         restTime = Math.max(0, c.getInt("dungeon.rest-time", 30));
         antiFloat = c.getBoolean("dungeon.anti-float", true);

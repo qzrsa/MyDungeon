@@ -100,7 +100,7 @@ public class DungeonListener implements Listener {
         }
     }
 
-    /** 复活点修正：在副本内死亡后仍在副本里复活（或按配置踢出） */
+    /** 复活点修正：副本内死亡后直接退出副本，复活交给其他插件/原版处理 */
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
@@ -108,35 +108,28 @@ public class DungeonListener implements Listener {
         if (inst == null) {
             return;
         }
-        if (plugin.config().kickOnDeath) {
-            Location back = inst.returnPoints.remove(p.getUniqueId());
-            inst.members.remove(p.getUniqueId());
-            // 还原重生点
-            Location bed = inst.bedSpawns.remove(p.getUniqueId());
-            if (bed != null) {
-                p.setBedSpawnLocation(bed, true);
-            } else {
-                p.setBedSpawnLocation(null, true);
-            }
-            if (inst.bossBar != null) {
-                inst.bossBar.removePlayer(p);
-            }
-            if (inst.board != null) {
-                inst.board.hide(p);
-            }
-            inst.forgetPlayer(p.getUniqueId());
-            if (back != null) {
-                e.setRespawnLocation(back);
-            }
-            p.sendMessage(org.bukkit.ChatColor.RED + "你在副本中阵亡，已被送出。");
-            if (inst.members.isEmpty()) {
-                plugin.endInstance(inst, "全员阵亡");
-            }
+        // 死了就摘出副本：还原重生点、送回进本前位置，之后复活点完全交给其他插件接管
+        Location back = inst.returnPoints.remove(p.getUniqueId());
+        inst.members.remove(p.getUniqueId());
+        Location bed = inst.bedSpawns.remove(p.getUniqueId());
+        if (bed != null) {
+            p.setBedSpawnLocation(bed, true);
         } else {
-            World w = plugin.dungeonWorld();
-            if (w != null) {
-                e.setRespawnLocation(ArenaBuilder.spawnLocation(w));
-            }
+            p.setBedSpawnLocation(null, true);
+        }
+        if (inst.bossBar != null) {
+            inst.bossBar.removePlayer(p);
+        }
+        if (inst.board != null) {
+            inst.board.hide(p);
+        }
+        inst.forgetPlayer(p.getUniqueId());
+        if (back != null) {
+            e.setRespawnLocation(back);
+        }
+        p.sendMessage(org.bukkit.ChatColor.RED + "你在副本中阵亡，已被送出。");
+        if (inst.members.isEmpty()) {
+            plugin.endInstance(inst, "全员阵亡");
         }
     }
 
