@@ -58,7 +58,7 @@ public class PluginConfig {
     public boolean requireTicket = false;
     public Material ticketMaterial = Material.NETHER_STAR;
     /** 进入副本倒计时秒数 */
-    public int enterCountdown = 5;
+    public int enterCountdown = 30;
     /** 每层结束后的修整秒数 */
     public int restTime = 30;
     /** 是否禁止副本内的技能浮空（拔刀剑 Trick Up / 空中缓降等） */
@@ -131,7 +131,7 @@ public class PluginConfig {
         spawnZ = c.getDouble("dungeon.spawn.z", 0.5);
         boundaryRadius = c.getDouble("dungeon.boundary-radius", 60.0);
         requireTicket = c.getBoolean("dungeon.require-ticket", false);
-        enterCountdown = Math.max(1, c.getInt("dungeon.enter-countdown", 5));
+        enterCountdown = Math.max(1, c.getInt("dungeon.enter-countdown", 30));
         restTime = Math.max(0, c.getInt("dungeon.rest-time", 30));
         antiFloat = c.getBoolean("dungeon.anti-float", true);
         antiFly = c.getBoolean("dungeon.anti-fly", true);

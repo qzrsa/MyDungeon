@@ -43,6 +43,20 @@ public class InstanceManager {
         return null;
     }
 
+    /**
+     * 找「第 1 关（stageIndex == 0）进行中」的副本 —— 用于组队中途加入。
+     * <p>规则：倒计时结束开始打第 1 关时，其他人还能进同一个槽位；
+     * 一旦推进到第 2 关（stageIndex >= 1），就禁止再进人，直到副本结束。
+     */
+    public DungeonInstance findJoinable() {
+        for (DungeonInstance inst : slots) {
+            if (inst.state == DungeonInstance.State.RUNNING && inst.stageIndex == 0) {
+                return inst;
+            }
+        }
+        return null;
+    }
+
     public DungeonInstance byPlayer(UUID uuid) {
         for (DungeonInstance inst : slots) {
             if (inst.members.contains(uuid)) {
