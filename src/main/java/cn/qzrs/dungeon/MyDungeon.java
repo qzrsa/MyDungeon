@@ -378,12 +378,26 @@ public class MyDungeon extends JavaPlugin {
                     if (!cfg.antiFloat) {
                         continue;
                     }
+                    // 玩家脚底离地高度（脚底 Y = 实体坐标 Y - 0，实体锚点在脚底）
+                    double feetY = p.getLocation().getY();
+                    double height = feetY - cfg.antiFloatGroundY;
+
+                    // ★ 强禁：拔刀剑剑技用 setDeltaMovement 每 tick 刷新速度，靠「Y 速度不够负」
+                    //   判断会漏掉（速度被刷成 0/正）。所以改为按「离地高度」判断：只要脚底
+                    //   离地超过阈值就持续向下压，和剑技抢位置。0 = 关闭高度强压。
+                    if (cfg.antiFloatMaxHeight > 0 && height > cfg.antiFloatMaxHeight) {
+                        Vector v = p.getVelocity();
+                        p.setVelocity(new Vector(v.getX(), cfg.antiFloatPullSpeed, v.getZ()));
+                        p.setFallDistance(0.0f);
+                        continue;
+                    }
+
+                    // 旧逻辑兜底：高度还没超阈值、但滞空过久且未自然下落 → 判定浮空压回
                     if (!p.isOnGround()) {
                         int air = inst.airTicks.merge(u, 1, Integer::sum);
                         Vector v = p.getVelocity();
-                        // 滞空过久且未自然下落（Y 速度不够负）→ 判定技能浮空，强制向下压
                         if (air > cfg.antiFloatAirTicks && v.getY() > -0.15) {
-                            p.setVelocity(new Vector(v.getX(), -0.7, v.getZ()));
+                            p.setVelocity(new Vector(v.getX(), cfg.antiFloatPullSpeed, v.getZ()));
                             p.setFallDistance(0.0f);
                         }
                     } else {
@@ -391,7 +405,7 @@ public class MyDungeon extends JavaPlugin {
                     }
                 }
             }
-        }, 10L, 2L);
+        }, 10L, 1L);
     }
 
     /**

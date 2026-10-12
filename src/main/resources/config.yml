@@ -69,6 +69,14 @@ dungeon:
   anti-float: true
   # 连续滞空超过该 tick 数即判定浮空并压回地面（20 tick = 1 秒，正常跳跃约 12 tick，不会误伤）
   anti-float-air-ticks: 15
+  # ★ 反浮空「强禁」：只要脚底离地超过这个高度（格）就持续向下压。
+  #   拔刀剑剑技每 tick 用 setDeltaMovement 刷新速度，靠「滞空时长+下落速度」判断会漏掉，
+  #   所以改成按「离地高度」硬判。0 = 关闭高度强压，退回旧逻辑。
+  anti-float-max-height: 2.5
+  # 强禁模式下每 tick 施加的向下速度（负值越大压得越狠，默认 -1.2）
+  anti-float-pull-speed: -1.2
+  # 判断「脚底离地」用的地面 Y（= 场地地板 y + 1；默认自动取 arena.floor-y + 1）
+  anti-float-ground-y: 65
   # 剩余怪数 <= 该值时给怪加发光，方便玩家找到最后几只（0 = 关闭）
   mob-glow-when-left: 5
 

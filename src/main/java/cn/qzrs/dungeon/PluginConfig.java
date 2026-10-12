@@ -66,6 +66,16 @@ public class PluginConfig {
     public boolean antiFloat = true;
     /** 连续滞空超过该 tick 数即判定为浮空并强制压回地面（20 tick = 1 秒） */
     public int antiFloatAirTicks = 15;
+    /**
+     * 反浮空「强禁」模式：只要脚底离地超过这个高度（格）就持续向下压，
+     * 不再依赖「Y 速度不够负」—— 拔刀剑剑技会每 tick 用 setDeltaMovement 刷新速度，
+     * 靠速度判断会漏掉。0 = 关闭高度强压，退回旧逻辑。
+     */
+    public double antiFloatMaxHeight = 2.5;
+    /** 强禁模式下每 tick 施加的向下速度（负值，越大压得越狠） */
+    public double antiFloatPullSpeed = -1.2;
+    /** 判断「脚底离地」用的地面高度（= 场地地板 Y + 1，站上去脚在 y+1） */
+    public int antiFloatGroundY = 65;
     /** 剩余怪数 <= 该值时给怪加发光，方便玩家找到最后几只（0 = 关闭） */
     public int mobGlowWhenLeft = 5;
 
@@ -121,6 +131,10 @@ public class PluginConfig {
         restTime = Math.max(0, c.getInt("dungeon.rest-time", 30));
         antiFloat = c.getBoolean("dungeon.anti-float", true);
         antiFloatAirTicks = Math.max(5, c.getInt("dungeon.anti-float-air-ticks", 15));
+        antiFloatMaxHeight = c.getDouble("dungeon.anti-float-max-height", 2.5);
+        antiFloatPullSpeed = c.getDouble("dungeon.anti-float-pull-speed", -1.2);
+        // 地面高度默认跟场地地板走（地板 y + 1），除非显式配了
+        antiFloatGroundY = c.getInt("dungeon.anti-float-ground-y", arenaFloorY + 1);
         mobGlowWhenLeft = Math.max(0, c.getInt("dungeon.mob-glow-when-left", 5));
 
         String mat = c.getString("dungeon.ticket-material", "NETHER_STAR");
