@@ -44,13 +44,13 @@ public class InstanceManager {
     }
 
     /**
-     * 找「前三关（stageIndex <= 2）进行中」的副本 —— 用于组队中途加入。
-     * <p>规则：倒计时结束开始打后，前 3 关期间其他人还能进同一个槽位；
-     * 一旦推进到第 4 关（stageIndex >= 3），就禁止再进人，直到副本结束。
+     * 找「前五关（stageIndex <= 4）进行中」的副本 —— 用于组队中途加入。
+     * <p>规则：倒计时结束开始打后，前 5 关期间其他人还能进同一个槽位；
+     * 一旦推进到第 6 关（stageIndex >= 5），就禁止再进人，直到副本结束。
      */
     public DungeonInstance findJoinable() {
         for (DungeonInstance inst : slots) {
-            if (inst.state == DungeonInstance.State.RUNNING && inst.stageIndex <= 2) {
+            if (inst.state == DungeonInstance.State.RUNNING && inst.stageIndex <= 4) {
                 return inst;
             }
         }

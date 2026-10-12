@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,14 +20,21 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 通关奖励 + 首通记录。
- * MVP 为固定掉落池（items），后续可替换为权重随机池。
+ * 通关奖励 + 首通记录 + 每层清空奖励。
+ * <p>三层奖励：
+ * <ol>
+ *   <li>{@code normal} —— 每次通关给队里每人；</li>
+ *   <li>{@code first-clear} —— 首次通关额外给每人；</li>
+ *   <li>{@code per-stage} —— 每层清空即发，<b>队伍共享一份</b>（随机给一个在线成员，背包满则掉地上）。</li>
+ * </ol>
  */
 public class RewardManager {
 
     private final List<ItemStack> normal = new ArrayList<>();
     private final List<ItemStack> firstClear = new ArrayList<>();
     private final Set<String> cleared = new HashSet<>();
+    /** 层数（1-based）→ 该层清空时发放的奖励（队伍共享一份） */
+    private final Map<Integer, List<ItemStack>> perStage = new HashMap<>();
 
     private File dataFile;
     private String dungeonId = "dungeon1";
@@ -34,11 +42,32 @@ public class RewardManager {
     public void load(YamlConfiguration yml, File dataFile) {
         normal.clear();
         firstClear.clear();
+        perStage.clear();
         this.dataFile = dataFile;
         this.dungeonId = yml.getString("id", "dungeon1");
 
         readPool(yml.getMapList("normal"), normal);
         readPool(yml.getMapList("first-clear"), firstClear);
+
+        // per-stage：key = 层数（1 起），value = 物品列表
+        if (yml.getConfigurationSection("per-stage") != null) {
+            for (String key : yml.getConfigurationSection("per-stage").getKeys(false)) {
+                int stage;
+                try {
+                    stage = Integer.parseInt(key.trim());
+                } catch (NumberFormatException ex) {
+                    continue;
+                }
+                if (stage <= 0) {
+                    continue;
+                }
+                List<ItemStack> items = new ArrayList<>();
+                readPool(yml.getMapList("per-stage." + key), items);
+                if (!items.isEmpty()) {
+                    perStage.put(stage, items);
+                }
+            }
+        }
 
         cleared.clear();
         if (dataFile != null && dataFile.exists()) {
@@ -64,6 +93,35 @@ public class RewardManager {
             }
             out.add(new ItemStack(mat, Math.max(1, amount)));
         }
+    }
+
+    /**
+     * 某层清空后发放该层奖励（队伍共享一份）。
+     *
+     * @param stageIndex 层下标（0-based，第 1 层 = 0）
+     * @return 是否真的发了（该层没配奖励则返回 false）
+     */
+    public boolean giveStage(DungeonInstance inst, int stageIndex) {
+        List<ItemStack> items = perStage.get(stageIndex + 1);
+        if (items == null || items.isEmpty()) {
+            return false;
+        }
+        // 队伍共享一份：随机挑一个在线成员，塞满就掉地上
+        Player target = null;
+        for (UUID u : inst.members) {
+            Player p = Bukkit.getPlayer(u);
+            if (p != null && p.isOnline()) {
+                target = p;
+                break;
+            }
+        }
+        if (target == null) {
+            return false;
+        }
+        for (ItemStack is : items) {
+            giveOrDrop(target, is.clone());
+        }
+        return true;
     }
 
     /** 给副本内所有在线成员发奖；首通玩家额外拿一份。 */

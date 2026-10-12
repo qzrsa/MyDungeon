@@ -122,7 +122,7 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        // 优先找空闲槽位开新副本；没有空闲但「前三关进行中」的副本可中途加入（组队）
+        // 优先找空闲槽位开新副本；没有空闲但「前五关进行中」的副本可中途加入（组队）
         DungeonInstance slot = plugin.instances().findFree();
         boolean joining = false;
         if (slot == null) {
@@ -132,7 +132,7 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
             }
         }
         if (slot == null) {
-            p.sendMessage(ChatColor.RED + "副本已进行到第 4 关及以后，无法中途加入，请等本场结束。");
+            p.sendMessage(ChatColor.RED + "副本已进行到第 6 关及以后，无法中途加入，请等本场结束。");
             return;
         }
         if (plugin.config().requireTicket && !consumeTicket(p)) {

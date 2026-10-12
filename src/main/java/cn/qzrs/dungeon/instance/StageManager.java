@@ -187,6 +187,11 @@ public class StageManager {
         if (!inst.liveMobs.isEmpty()) {
             return;
         }
+        // 该层清空：发放本层奖励（队伍共享一份，配置文件 rewards/*.yml 的 per-stage 段自定义）
+        boolean gotReward = MyDungeon.get().rewards().giveStage(inst, inst.stageIndex);
+        if (gotReward) {
+            broadcast(inst, ChatColor.GREEN + "◆ 第 " + (inst.stageIndex + 1) + " 层奖励已发放！");
+        }
         int next = inst.stageIndex + 1;
         if (inst.bossBar != null) {
             inst.bossBar.removeAll();

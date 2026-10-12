@@ -1,13 +1,38 @@
 # ============================================================
-#  通关奖励池（MVP：固定掉落，后续可扩展为随机池）
-#  material 取值见 Bukkit Material
+#  副本奖励配置
+#  三段：
+#    ① normal      —— 每次通关给队里【每人】一份
+#    ② first-clear —— 首次通关额外给【每人】一份
+#    ③ per-stage   —— 每层清空即发，【队伍共享一份】
+#                     （随机给一个在线成员，背包满则掉在地上）
 # ============================================================
 
-# 每次通关都给
+id: dungeon1
+
+# 每次通关都给（每人）
 normal:
   - { material: DIAMOND, amount: 8 }
   - { material: GOLD_INGOT, amount: 16 }
 
-# 仅首次通关额外给
+# 仅首次通关额外给（每人）
 first-clear:
   - { material: NETHERITE_INGOT, amount: 1 }
+
+# 每层清空即发（队伍共享一份）。key = 层数（1 起），value = 物品列表。
+# 没列出的层不发；想给某层发多个物品就写多行。
+# material 取值见 Bukkit Material（如 DIAMOND / EMERALD / NETHERITE_INGOT ...）
+per-stage:
+  5:
+    - { material: EMERALD, amount: 3 }
+  10:
+    - { material: DIAMOND, amount: 5 }
+  15:
+    - { material: EMERALD, amount: 8 }
+  20:
+    - { material: DIAMOND, amount: 10 }
+    - { material: NETHERITE_INGOT, amount: 1 }
+  25:
+    - { material: EMERALD, amount: 12 }
+  30:
+    - { material: NETHERITE_INGOT, amount: 2 }
+    - { material: DIAMOND, amount: 16 }
