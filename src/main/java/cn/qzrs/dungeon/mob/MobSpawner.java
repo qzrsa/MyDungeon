@@ -22,9 +22,20 @@ public final class MobSpawner {
     private MobSpawner() {
     }
 
-    public static DungeonMob spawn(Location loc, MobTemplate t) {
+    /**
+     * 生成副本怪。
+     *
+     * @param layer 所在层数（从 1 开始）—— 用于按层叠加保底血量
+     */
+    public static DungeonMob spawn(Location loc, MobTemplate t, int layer) {
         PluginConfig cfg = MyDungeon.get().config();
-        double hp = Math.max(1.0, t.health * cfg.mobHealthScale);
+        // 按层递增的保底血量：第 N 层每只怪额外加 N × layer-health-step，
+        // 所以第 1 层保底 1W、第 2 层 2W …… 第 10 层 10W。
+        // BOSS 的这部分加成再乘 boss-health-bonus（默认 3 倍），让首领明显更肉。
+        int n = Math.max(1, layer);
+        double layerBonus = n * cfg.layerHealthStep
+                * (t.boss ? cfg.bossHealthBonus : 1.0);
+        double hp = Math.max(1.0, t.health * cfg.mobHealthScale + layerBonus);
         double dmg = Math.max(0.0, t.damage * cfg.mobDamageScale);
 
         World w = loc.getWorld();

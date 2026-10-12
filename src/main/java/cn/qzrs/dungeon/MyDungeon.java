@@ -131,7 +131,9 @@ public class MyDungeon extends JavaPlugin {
                 + " | 阶段=" + stages.stageCount()
                 + " | 公式K=" + config.armorK
                 + " | 血量倍率=" + config.mobHealthScale
-                + " | 伤害倍率=" + config.mobDamageScale);
+                + " | 伤害倍率=" + config.mobDamageScale
+                + " | 层数血量每层+" + (long) config.layerHealthStep
+                + "（BOSS×" + config.bossHealthBonus + "）");
     }
 
     @Override
@@ -517,8 +519,12 @@ public class MyDungeon extends JavaPlugin {
      */
     private void checkHealthLimit() {
         double maxTemplate = 0.0;
+        // 血量最高的怪出现在最后一层，且 BOSS 还要再乘 boss-health-bonus
+        int maxLayer = Math.max(1, stages().stageCount());
         for (MobTemplate t : mobs.values()) {
-            maxTemplate = Math.max(maxTemplate, t.health * config.mobHealthScale);
+            double layerBonus = maxLayer * config.layerHealthStep
+                    * (t.boss ? config.bossHealthBonus : 1.0);
+            maxTemplate = Math.max(maxTemplate, t.health * config.mobHealthScale + layerBonus);
         }
         if (maxTemplate <= 0) {
             return;

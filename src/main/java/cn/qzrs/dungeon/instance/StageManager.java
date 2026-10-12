@@ -152,7 +152,7 @@ public class StageManager {
             Player anchor = firstOnlinePlayer(inst);
             for (int i = 0; i < sd.count; i++) {
                 Location loc = randomSpawnPoint(w, anchor);
-                DungeonMob mob = MobSpawner.spawn(loc, template);
+                DungeonMob mob = MobSpawner.spawn(loc, template, index + 1);
                 if (mob != null) {
                     MyDungeon.get().instances().registerMob(inst, mob);
                 }

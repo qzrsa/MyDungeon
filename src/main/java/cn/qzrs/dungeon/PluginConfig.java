@@ -18,6 +18,10 @@ public class PluginConfig {
     // ---------- mobs ----------
     public double mobHealthScale = 1.0;
     public double mobDamageScale = 1.0;
+    /** 按层递增的保底血量：第 N 层（从 1 起）每只怪在模板血量之外再加 N × 本值 */
+    public double layerHealthStep = 10000.0;
+    /** BOSS 的层数加成额外乘这个倍率 —— 让首领明显比同层杂兵更肉 */
+    public double bossHealthBonus = 3.0;
 
     // ---------- dungeon ----------
     public String worldName = "dungeon_01";
@@ -59,6 +63,8 @@ public class PluginConfig {
 
         mobHealthScale = c.getDouble("mobs.health-scale", 1.0);
         mobDamageScale = c.getDouble("mobs.damage-scale", 1.0);
+        layerHealthStep = Math.max(0.0, c.getDouble("mobs.layer-health-step", 10000.0));
+        bossHealthBonus = Math.max(1.0, c.getDouble("mobs.boss-health-bonus", 3.0));
 
         worldName = c.getString("dungeon.world", "dungeon_01");
         slots = Math.max(1, c.getInt("dungeon.slots", 1));

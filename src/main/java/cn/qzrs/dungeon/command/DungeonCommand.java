@@ -187,6 +187,9 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "战损公式：" + ChatColor.WHITE + "减伤 = armor/(armor+" + plugin.config().armorK + ")");
         sender.sendMessage(ChatColor.GRAY + "怪血量倍率：" + ChatColor.WHITE + plugin.config().mobHealthScale
                 + ChatColor.GRAY + "  怪伤害倍率：" + ChatColor.WHITE + plugin.config().mobDamageScale);
+        sender.sendMessage(ChatColor.GRAY + "层数血量：第 N 层保底 +" + ChatColor.WHITE
+                + (long) plugin.config().layerHealthStep + "×N"
+                + ChatColor.GRAY + "  BOSS 再×" + ChatColor.WHITE + plugin.config().bossHealthBonus);
         sender.sendMessage(ChatColor.GRAY + "怪模板数：" + ChatColor.WHITE + plugin.mobs().size()
                 + ChatColor.GRAY + "  阶段数：" + ChatColor.WHITE + plugin.stages().stageCount());
         sender.sendMessage(ChatColor.GRAY + "进行中的副本：" + ChatColor.WHITE + plugin.instances().runningCount());
