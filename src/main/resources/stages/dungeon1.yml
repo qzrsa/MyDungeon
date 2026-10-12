@@ -14,8 +14,9 @@
 #     此时忽略模板血量与层数加成。用于让 BOSS 血量精确可控。
 #
 #  v0.3.14：10 → 20 层；v0.3.15：20 层 BOSS 钉死 200W。
-#  v0.4.0：20 → 30 层，新增 21~30 层；第 20 层保留 200W 中期 BOSS，
-#          最终 BOSS 移到第 30 层（钉死 300W）。
+#  v0.4.0：20 → 30 层，新增 21~30 层，最终 BOSS 移到第 30 层。
+#  v0.4.1：血量改走 config 的 mobs.health-floor 按层段保底（普通怪/BOSS 分开），
+#          移除原来 hp: 绝对覆盖，BOSS 血量 = 该层段 boss 保底值。
 # ============================================================
 
 id: dungeon1
@@ -163,8 +164,8 @@ stages:
   - type: BOSS
     name: '&4&l第 20 层 · 终末之厅·极'
     spawns:
-      # hp: 绝对血量覆盖 —— 200 万，不受 layer-health-step / boss-health-bonus 影响
-      - { mob: boss_ravager, count: 1, hp: 2000000 }
+      # 走 config 的 mobs.health-floor.boss 保底：11~20 层 = 500W
+      - { mob: boss_ravager, count: 1 }
       - { mob: elite_vex, count: 16 }
       - { mob: elite_witch, count: 6 }
       - { mob: elite_marksman, count: 10 }
@@ -241,8 +242,8 @@ stages:
   - type: BOSS
     name: '&4&l第 30 层 · 终末之厅·无上'
     spawns:
-      # hp: 绝对血量覆盖 —— 300 万最终 BOSS，不受公式影响
-      - { mob: boss_ravager, count: 1, hp: 3000000 }
+      # 走 config 的 mobs.health-floor.boss 保底：21~30 层 = 1000W
+      - { mob: boss_ravager, count: 1 }
       - { mob: elite_vex, count: 18 }
       - { mob: elite_witch, count: 8 }
       - { mob: elite_marksman, count: 12 }

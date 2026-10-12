@@ -49,15 +49,16 @@ public final class MobSpawner {
         int n = Math.max(1, layer);
         double hp;
         if (hpOverride > 0) {
-            // 绝对覆盖：改 layer-health-step / boss-health-bonus 都不会影响它，数值稳定
+            // 绝对覆盖：改任何全局难度参数都不会影响它，数值稳定
             hp = hpOverride;
         } else {
-            // 按层递增的保底血量：第 N 层每只怪额外加 N × layer-health-step，
-            // 所以第 1 层保底 1W、第 2 层 2W …… 第 10 层 10W。
-            // BOSS 的这部分加成再乘 boss-health-bonus（默认 3 倍），让首领明显更肉。
-            double layerBonus = n * cfg.layerHealthStep
-                    * (t.boss ? cfg.bossHealthBonus : 1.0);
-            hp = Math.max(1.0, t.health * cfg.mobHealthScale + layerBonus);
+            // ★ 按层段保底（v0.4.1）：hp = max(模板血 × health-scale, 该层段保底值)。
+            //   普通怪走 normal-floor，BOSS 走 boss-floor；弱怪被抬到保底、精英保留更高血。
+            double floor = t.boss
+                    ? cfg.floorFor(cfg.bossFloor, n)
+                    : cfg.floorFor(cfg.normalFloor, n);
+            double base = t.health * cfg.mobHealthScale;
+            hp = Math.max(1.0, Math.max(base, floor));
         }
         double dmg = Math.max(0.0, t.damage * cfg.mobDamageScale);
 

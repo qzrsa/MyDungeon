@@ -4,7 +4,9 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -34,10 +36,37 @@ public class PluginConfig {
     /**
      * 按层递增的保底血量：第 N 层（从 1 起）每只怪在模板血量之外再加 N × 本值。
      * 默认 5000 是按 20 层调的（第 20 层 10W/只）；层数少时可以调大。
+     * ★ 已由 {@link #normalFloor} / {@link #bossFloor} 按层段保底取代（v0.4.1），
+     *   此键保留向后兼容，但默认不再作为主要难度来源。
      */
     public double layerHealthStep = 5000.0;
     /** BOSS 的层数加成额外乘这个倍率 —— 让首领明显比同层杂兵更肉 */
     public double bossHealthBonus = 3.0;
+    /**
+     * 普通怪按层段保底血量：每项 { from: 起始层, hp: 保底血量 }，取「from <= 当前层」里最大的档。
+     * <p>语义：hp = max(模板血 × health-scale, 保底值)，弱怪被抬到保底、精英保留更高血。
+     * <pre>
+     *   normal-floor:
+     *     - { from: 1,  hp: 50000 }
+     *     - { from: 11, hp: 200000 }
+     *     - { from: 21, hp: 300000 }
+     * </pre>
+     */
+    public final List<HealthFloor> normalFloor = new ArrayList<>();
+    /** BOSS 按层段保底血量，结构同 {@link #normalFloor} */
+    public final List<HealthFloor> bossFloor = new ArrayList<>();
+
+    /** 单档保底：起始层 + 血量 */
+    public static class HealthFloor {
+        public final int from;
+        public final double hp;
+
+        public HealthFloor(int from, double hp) {
+            this.from = from;
+            this.hp = hp;
+        }
+    }
+
     /**
      * 按层数档位给怪叠加的药水效果。key = 起始层数，取「不超过当前层的最大档」。
      * <pre>
@@ -122,6 +151,7 @@ public class PluginConfig {
         mobDamageScale = c.getDouble("mobs.damage-scale", 1.0);
         layerHealthStep = Math.max(0.0, c.getDouble("mobs.layer-health-step", 5000.0));
         bossHealthBonus = Math.max(1.0, c.getDouble("mobs.boss-health-bonus", 3.0));
+        loadHealthFloors(c);
         loadTierBuffs(c);
 
         worldName = c.getString("dungeon.world", "dungeon_01");
@@ -173,6 +203,60 @@ public class PluginConfig {
             }
         }
         return def;
+    }
+
+    /** 读 mobs.health-floor：普通怪 / BOSS 的按层段保底血量 */
+    private void loadHealthFloors(FileConfiguration c) {
+        normalFloor.clear();
+        bossFloor.clear();
+        readFloorList(c.getMapList("mobs.health-floor.normal"), normalFloor);
+        readFloorList(c.getMapList("mobs.health-floor.boss"), bossFloor);
+        // 按起始层排序，保证「取不超过当前层的最大档」逻辑稳定
+        normalFloor.sort((a, b) -> Integer.compare(a.from, b.from));
+        bossFloor.sort((a, b) -> Integer.compare(a.from, b.from));
+    }
+
+    private void readFloorList(List<Map<?, ?>> raw, List<HealthFloor> out) {
+        for (Map<?, ?> m : raw) {
+            int from = toInt(m.get("from"), -1);
+            double hp = toDouble(m.get("hp"), 0.0);
+            if (from >= 1 && hp > 0) {
+                out.add(new HealthFloor(from, hp));
+            }
+        }
+    }
+
+    /** 取「起始层 <= layer」里起始层最大的保底血量；无匹配返回 0 */
+    public double floorFor(List<HealthFloor> floors, int layer) {
+        double best = 0.0;
+        for (HealthFloor f : floors) {
+            if (f.from <= layer && f.hp > best) {
+                best = f.hp;
+            }
+        }
+        return best;
+    }
+
+    private static int toInt(Object o, int def) {
+        if (o instanceof Number n) {
+            return n.intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(o));
+        } catch (NumberFormatException ex) {
+            return def;
+        }
+    }
+
+    private static double toDouble(Object o, double def) {
+        if (o instanceof Number n) {
+            return n.doubleValue();
+        }
+        try {
+            return Double.parseDouble(String.valueOf(o));
+        } catch (NumberFormatException ex) {
+            return def;
+        }
     }
 
     /** 读 mobs.tier-buffs：起始层 → 药水效果表（效果名 → 等级） */

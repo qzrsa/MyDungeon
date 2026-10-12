@@ -648,12 +648,14 @@ public class MyDungeon extends JavaPlugin {
      */
     private void checkHealthLimit() {
         double maxTemplate = 0.0;
-        // 血量最高的怪出现在最后一层，且 BOSS 还要再乘 boss-health-bonus
+        // 血量最高的怪出现在最后一层：按层段保底取（v0.4.1 起用 health-floor，而非线性 step）
         int maxLayer = Math.max(1, stages().stageCount());
         for (MobTemplate t : mobs.values()) {
-            double layerBonus = maxLayer * config.layerHealthStep
-                    * (t.boss ? config.bossHealthBonus : 1.0);
-            maxTemplate = Math.max(maxTemplate, t.health * config.mobHealthScale + layerBonus);
+            double floor = t.boss
+                    ? config.floorFor(config.bossFloor, maxLayer)
+                    : config.floorFor(config.normalFloor, maxLayer);
+            double base = t.health * config.mobHealthScale;
+            maxTemplate = Math.max(maxTemplate, Math.max(base, floor));
         }
         // 关卡里用 hp: 钉死的绝对血量也得纳入检查（它不受上面公式约束）
         maxTemplate = Math.max(maxTemplate, stages().maxHpOverride());
