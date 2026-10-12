@@ -97,8 +97,10 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         }
 
         int countdown = plugin.config().enterCountdown;
-        // ★ 公屏公告：这个玩家是「当前没有任何人倒计时」的第一个开启者时，广播全场
-        boolean first = pendingEnter.isEmpty();
+        // ★ 公屏公告：仅「当前没有任何进行中的副本」时才广播 —— 即这是一场全新的试炼。
+        //   同一场里后续加入的玩家（副本已 RUNNING，或同批倒计时）不再广播，
+        //   直到本场结束、副本回到空闲，下一场开启时才重新广播。
+        boolean first = plugin.instances().runningCount() == 0;
         if (first) {
             Bukkit.broadcastMessage(ChatColor.GOLD + "⚔ " + ChatColor.AQUA + p.getName()
                     + ChatColor.GOLD + " 开启了试炼挑战！"
