@@ -120,6 +120,7 @@ public class MyDungeon extends JavaPlugin {
         startProgressTask();
         startWorldWatchdog();
         startMobLeashTask();
+        checkHealthLimit();
 
         getLogger().info("MyDungeon 已启用 | 副本世界=" + config.worldName
                 + " | 槽位=" + config.slots
@@ -435,5 +436,35 @@ public class MyDungeon extends JavaPlugin {
                 }
             }
         }, 40L, 40L);
+    }
+
+    /**
+     * 启动自检：spigot.yml 的 settings.attribute.maxHealth.max 会限制所有实体的血量上限
+     * （Spigot 默认 2048，远低于本插件怪模板的千级 / 万级血量）。一旦它小于怪模板最大血量，
+     * 怪会被削血，这里主动告警，避免「怪血量被限制」这种隐蔽问题。
+     */
+    private void checkHealthLimit() {
+        double maxTemplate = 0.0;
+        for (MobTemplate t : mobs.values()) {
+            maxTemplate = Math.max(maxTemplate, t.health * config.mobHealthScale);
+        }
+        if (maxTemplate <= 0) {
+            return;
+        }
+        File serverRoot = getDataFolder().getParentFile().getParentFile();
+        File spigotFile = new File(serverRoot, "spigot.yml");
+        if (!spigotFile.isFile()) {
+            return;
+        }
+        double limit = YamlConfiguration.loadConfiguration(spigotFile)
+                .getDouble("settings.attribute.maxHealth.max", -1.0);
+        if (limit > 0 && limit < maxTemplate) {
+            getLogger().warning("★ 怪的血量会被 spigot.yml 限制！怪模板最大血量 = " + maxTemplate
+                    + "，但 settings.attribute.maxHealth.max = " + limit
+                    + "。请把它调大（推荐 1.0E7）后重启服务端。");
+        } else {
+            getLogger().info("血量上限自检通过：spigot.yml maxHealth.max = " + limit
+                    + "（怪模板最大血量 " + maxTemplate + "）。");
+        }
     }
 }
