@@ -8,7 +8,7 @@ softdepend: [Multiverse-Core]
 commands:
   dungeon:
     description: 副本挑战命令
-    usage: /dungeon <enter|leave|info|reload>
+    usage: /dungeon <enter|cancel|leave|info|reload>
     aliases: [dg, fuben]
 permissions:
   dungeon.use:

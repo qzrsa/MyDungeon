@@ -4,6 +4,8 @@ import cn.qzrs.dungeon.MyDungeon;
 import cn.qzrs.dungeon.arena.ArenaBuilder;
 import cn.qzrs.dungeon.board.DamageBoard;
 import cn.qzrs.dungeon.instance.DungeonInstance;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -17,23 +19,24 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 
 /**
- * /dungeon enter|leave|info|reload
+ * /dungeon enter|cancel|leave|info|reload
  */
 public class DungeonCommand implements CommandExecutor, TabCompleter {
 
-    private static final List<String> SUBS = List.of("enter", "leave", "info", "reload");
+    private static final List<String> SUBS = List.of("enter", "cancel", "leave", "info", "reload");
 
     private final MyDungeon plugin;
     /** 正在等待进入副本倒计时的玩家 */
-    private final Set<UUID> pendingEnter = new HashSet<>();
+    private final Map<UUID, BukkitTask> pendingEnter = new HashMap<>();
 
     public DungeonCommand(MyDungeon plugin) {
         this.plugin = plugin;
@@ -49,6 +52,9 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase()) {
             case "enter" -> {
                 return enter(sender);
+            }
+            case "cancel" -> {
+                return cancel(sender);
             }
             case "leave" -> {
                 return leave(sender);
@@ -80,8 +86,8 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
             p.sendMessage(ChatColor.RED + "你已经在副本里了，先用 /dungeon leave 出来。");
             return true;
         }
-        if (pendingEnter.contains(p.getUniqueId())) {
-            p.sendMessage(ChatColor.RED + "正在等待进入副本，请稍候...");
+        if (pendingEnter.containsKey(p.getUniqueId())) {
+            p.sendMessage(ChatColor.RED + "正在等待进入副本，可用 /dungeon cancel 取消。");
             return true;
         }
         World w = plugin.dungeonWorld();
@@ -91,24 +97,71 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
         }
 
         int countdown = plugin.config().enterCountdown;
-        pendingEnter.add(p.getUniqueId());
-        p.sendMessage(ChatColor.GREEN + "副本将在 " + countdown + " 秒后开始，请做好准备...");
+        // ★ 公屏公告：这个玩家是「当前没有任何人倒计时」的第一个开启者时，广播全场
+        boolean first = pendingEnter.isEmpty();
+        if (first) {
+            Bukkit.broadcastMessage(ChatColor.GOLD + "⚔ " + ChatColor.AQUA + p.getName()
+                    + ChatColor.GOLD + " 开启了试炼挑战！"
+                    + ChatColor.GREEN + countdown + " 秒内"
+                    + ChatColor.YELLOW + "可输入 /dungeon enter 加入。");
+        }
+        pendingEnter.put(p.getUniqueId(), null);
+        p.sendMessage(ChatColor.GREEN + "副本将在 " + countdown + " 秒后开始，"
+                + ChatColor.GRAY + "输入 /dungeon cancel 或点击下方按钮可取消。");
 
         final int[] left = {countdown};
-        Bukkit.getScheduler().runTaskTimer(plugin, task -> {
+        final java.util.concurrent.atomic.AtomicReference<BukkitTask> holder = new java.util.concurrent.atomic.AtomicReference<>();
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             left[0]--;
             if (left[0] <= 0) {
-                task.cancel();
+                BukkitTask self = holder.get();
+                if (self != null) {
+                    self.cancel();
+                }
                 pendingEnter.remove(p.getUniqueId());
                 if (p.isOnline()) {
                     doEnter(p);
                 }
             } else {
                 p.sendTitle(ChatColor.GOLD.toString() + left[0], ChatColor.GRAY + "即将进入副本", 0, 25, 5);
-                p.sendMessage(ChatColor.YELLOW + "进入副本倒计时：" + left[0] + " 秒");
+                // 倒计时提示 + 可点击的 [取消进入]
+                TextComponent line = new TextComponent(ChatColor.YELLOW + "进入副本倒计时：" + left[0] + " 秒  ");
+                TextComponent btn = new TextComponent(ChatColor.RED + "[取消进入]");
+                btn.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dungeon cancel"));
+                btn.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(
+                        net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT,
+                        new TextComponent[]{new TextComponent(ChatColor.GRAY + "点击取消进入副本")}));
+                line.addExtra(btn);
+                p.spigot().sendMessage(line);
             }
         }, 20L, 20L);
+        holder.set(task);
+        pendingEnter.put(p.getUniqueId(), task);
         return true;
+    }
+
+    /** 取消进入倒计时（指令 + 点击消息共用） */
+    private boolean cancel(CommandSender sender) {
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage("该命令只能由玩家执行。");
+            return true;
+        }
+        BukkitTask task = pendingEnter.remove(p.getUniqueId());
+        if (task == null) {
+            p.sendMessage(ChatColor.RED + "你当前没有待进入的副本倒计时。");
+            return true;
+        }
+        task.cancel();
+        p.sendMessage(ChatColor.YELLOW + "已取消进入副本。");
+        return true;
+    }
+
+    /** 玩家掉线 / 插件卸载时，静默取消他的倒计时任务（供监听器调用） */
+    public void cancelPending(UUID uuid) {
+        BukkitTask task = pendingEnter.remove(uuid);
+        if (task != null) {
+            task.cancel();
+        }
     }
 
     /** 倒计时结束后的真正进本流程 */
@@ -277,7 +330,8 @@ public class DungeonCommand implements CommandExecutor, TabCompleter {
 
     private void help(CommandSender sender, String label) {
         sender.sendMessage(ChatColor.GOLD + "===== MyDungeon 命令 =====");
-        sender.sendMessage(ChatColor.YELLOW + "/" + label + " enter" + ChatColor.GRAY + "  — 进入副本");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " enter" + ChatColor.GRAY + "  — 进入副本（倒计时内可组队）");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " cancel" + ChatColor.GRAY + " — 取消进入倒计时");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " leave" + ChatColor.GRAY + "  — 离开副本");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " info" + ChatColor.GRAY + "   — 查看副本状态");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " reload" + ChatColor.GRAY + " — 重载配置（管理员）");

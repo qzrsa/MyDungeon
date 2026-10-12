@@ -56,6 +56,7 @@ public class MyDungeon extends JavaPlugin {
     private RewardManager rewards = new RewardManager();
     private Map<String, MobTemplate> mobs = new LinkedHashMap<>();
     private World dungeonWorld;
+    private DungeonCommand command;
     /**
      * 纯文件 IO 的专用线程 —— 本插件唯一脱离主线程的工作。
      * 见 {@link #runAsync(Runnable)}：只允许放进「读写文件 / 纯计算」，
@@ -99,6 +100,10 @@ public class MyDungeon extends JavaPlugin {
         return dungeonWorld;
     }
 
+    public DungeonCommand command() {
+        return command;
+    }
+
     // ------------------------------------------------------------------
 
     @Override
@@ -127,6 +132,7 @@ public class MyDungeon extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new DungeonListener(this), this);
 
         DungeonCommand cmd = new DungeonCommand(this);
+        this.command = cmd;
         if (getCommand("dungeon") != null) {
             getCommand("dungeon").setExecutor(cmd);
             getCommand("dungeon").setTabCompleter(cmd);

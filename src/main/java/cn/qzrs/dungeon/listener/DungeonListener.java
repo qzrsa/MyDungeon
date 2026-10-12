@@ -91,6 +91,10 @@ public class DungeonListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         Player p = e.getPlayer();
+        // 掉线玩家若有待进入的倒计时，先取消（否则任务里引用已下线玩家）
+        if (plugin.command() != null) {
+            plugin.command().cancelPending(p.getUniqueId());
+        }
         DungeonInstance inst = plugin.instances().byPlayer(p.getUniqueId());
         if (inst == null) {
             return;
