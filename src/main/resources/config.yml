@@ -40,6 +40,10 @@ dungeon:
   enter-countdown: 5
   # 每层结束后的修整秒数
   rest-time: 30
+  # 禁止副本内技能浮空（拔刀剑 Trick Up、空中缓降等）
+  anti-float: true
+  # 连续滞空超过该 tick 数即判定浮空并压回地面（20 tick = 1 秒，正常跳跃约 12 tick，不会误伤）
+  anti-float-air-ticks: 15
 
 arena:
   # 启动时自动生成测试场（虚空里铺地板 + 围墙 + 照明）

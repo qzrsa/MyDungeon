@@ -33,6 +33,10 @@ public class PluginConfig {
     public int enterCountdown = 5;
     /** 每层结束后的修整秒数 */
     public int restTime = 30;
+    /** 是否禁止副本内的技能浮空（拔刀剑 Trick Up / 空中缓降等） */
+    public boolean antiFloat = true;
+    /** 连续滞空超过该 tick 数即判定为浮空并强制压回地面（20 tick = 1 秒） */
+    public int antiFloatAirTicks = 15;
 
     // ---------- arena ----------
     public boolean arenaAutoBuild = true;
@@ -64,6 +68,8 @@ public class PluginConfig {
         kickOnDeath = c.getBoolean("dungeon.kick-on-death", false);
         enterCountdown = Math.max(1, c.getInt("dungeon.enter-countdown", 5));
         restTime = Math.max(0, c.getInt("dungeon.rest-time", 30));
+        antiFloat = c.getBoolean("dungeon.anti-float", true);
+        antiFloatAirTicks = Math.max(5, c.getInt("dungeon.anti-float-air-ticks", 15));
 
         String mat = c.getString("dungeon.ticket-material", "NETHER_STAR");
         ticketMaterial = parseMaterial(mat, Material.NETHER_STAR);

@@ -38,6 +38,8 @@ public class DungeonInstance {
     public final Map<UUID, Location> returnPoints = new HashMap<>();
     /** 玩家进本前的飞行权限，离开时还原（副本内禁飞） */
     public final Map<UUID, Boolean> allowFlightBefore = new HashMap<>();
+    /** 玩家连续滞空 tick 数，用于检测拔刀剑等技能浮空 */
+    public final Map<UUID, Integer> airTicks = new HashMap<>();
 
     public State state = State.IDLE;
     /** 当前阶段下标，-1 表示尚未开始 */
@@ -59,6 +61,7 @@ public class DungeonInstance {
 
     public void clearRuntime() {
         liveMobs.clear();
+        airTicks.clear();
         if (bossBar != null) {
             bossBar.removeAll();
             bossBar = null;

@@ -19,6 +19,7 @@ import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.Vector;
 
 import java.io.File;
 import java.io.InputStream;
@@ -268,9 +269,17 @@ public class MyDungeon extends JavaPlugin {
         }, 20L, 10L);
     }
 
-    /** 副本禁飞：周期检查副本成员，强制取消飞行与鞘翅滑翔 */
+    /**
+     * 副本禁飞 + 禁浮空：
+     * <ul>
+     *   <li>取消原版飞行 / 鞘翅滑翔；</li>
+     *   <li>拦截拔刀剑 {@code Trick Up}、空中缓降等「持续滞空」型技能浮空 ——
+     *       连续滞空超过阈值且没有自然下落时，强制把玩家压回地面。</li>
+     * </ul>
+     */
     private void startAntiFlyTask() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
+            PluginConfig cfg = config;
             for (DungeonInstance inst : instances.all()) {
                 for (UUID u : inst.members) {
                     Player p = Bukkit.getPlayer(u);
@@ -283,9 +292,23 @@ public class MyDungeon extends JavaPlugin {
                     if (p.isGliding()) {
                         p.setGliding(false);
                     }
+                    if (!cfg.antiFloat) {
+                        continue;
+                    }
+                    if (!p.isOnGround()) {
+                        int air = inst.airTicks.merge(u, 1, Integer::sum);
+                        Vector v = p.getVelocity();
+                        // 滞空过久且未自然下落（Y 速度不够负）→ 判定技能浮空，强制向下压
+                        if (air > cfg.antiFloatAirTicks && v.getY() > -0.15) {
+                            p.setVelocity(new Vector(v.getX(), -0.7, v.getZ()));
+                            p.setFallDistance(0.0f);
+                        }
+                    } else {
+                        inst.airTicks.put(u, 0);
+                    }
                 }
             }
-        }, 10L, 4L);
+        }, 10L, 1L);
     }
 
     /**
