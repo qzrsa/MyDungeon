@@ -48,7 +48,7 @@ public class DungeonListener implements Listener {
         plugin.stages().onMobDeath(inst, id);
     }
 
-    /** 出界 / 掉出场地 → 拉回落点 */
+    /** 出界 / 掉出场地 → 拉回落点；高度强拦（拔刀剑剑技升空）→ 钳制落点 */
     @EventHandler(ignoreCancelled = true)
     public void onMove(PlayerMoveEvent e) {
         Player p = e.getPlayer();
@@ -59,6 +59,22 @@ public class DungeonListener implements Listener {
         if (to == null) {
             return;
         }
+
+        // ★ 高度强拦（v0.4.2）：拔刀剑剑技（如 SA「红樱落尽」）每 tick 用 setDeltaMovement
+        //   直刷速度升空，插件靠 setVelocity 下压是「比谁刷得晚」，往往压不住。
+        //   这里在 PlayerMoveEvent 用 setTo() 直接改写最终落点 —— 移动结算之后、
+        //   坐标提交之前拦截，任何 setDeltaMovement 都绕不过这一层。
+        //   只要脚底离地超过阈值，就把 Y 钳死在地面 + 阈值，玩家无法再往上。
+        if (plugin.config().antiFloat && plugin.config().antiFloatMaxHeight > 0) {
+            double feetY = to.getY();
+            double maxY = plugin.config().antiFloatGroundY + plugin.config().antiFloatMaxHeight;
+            if (feetY > maxY) {
+                to.setY(maxY);
+                e.setTo(to);
+                p.setFallDistance(0.0f);
+            }
+        }
+
         double r = plugin.config().boundaryRadius;
         boolean outside = Math.abs(to.getX()) > r
                 || Math.abs(to.getZ()) > r
