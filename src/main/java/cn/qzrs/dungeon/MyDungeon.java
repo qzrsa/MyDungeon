@@ -19,6 +19,8 @@ import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.io.File;
@@ -367,10 +369,14 @@ public class MyDungeon extends JavaPlugin {
     }
 
     /**
-     * 卡怪拉回：周期检查副本怪是否「越界飞出」（VEX 穿墙飞出玻璃墙 / 掉进虚空）
-     * 或「卡进方块」（刷进中心台座 / 墙体内，且窒息伤害被护盾 cancel 死不了）。
-     * 命中即把怪拉回场地内随机安全点（不清除，保留继续打），
-     * 同时顺手给燃烧的亡灵怪灭火（防常昼世界被阳光晒死）。
+     * 副本怪维护：周期检查每只存活怪，处理异常情况，保证阶段一定能推进。
+     * <ol>
+     *   <li><b>幽灵怪</b>：实体已被移除 / 无效 / 已死，但仍残留在存活列表 ——
+     *       直接清理并推进阶段（否则会「剩 1 只永远找不到、卡住不推进」）。</li>
+     *   <li><b>越界 / 卡方块</b>：VEX 穿墙飞出、刷进台座或墙体 —— 拉回场地安全点。</li>
+     *   <li><b>燃烧</b>：常昼世界亡灵怪被阳光点燃 —— 灭火（护盾拦不住 Arclight 燃烧）。</li>
+     * </ol>
+     * 另外：剩余怪很少时给它们加发光，方便玩家找到最后几只。
      */
     private void startMobLeashTask() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
@@ -382,15 +388,36 @@ public class MyDungeon extends JavaPlugin {
                 if (inst.state != DungeonInstance.State.RUNNING) {
                     continue;
                 }
-                for (DungeonMob mob : new ArrayList<>(inst.liveMobs.values())) {
-                    if (mob.entity == null || mob.entity.isDead()) {
+                // 剩余怪少时发光，方便玩家找到最后几只
+                boolean glow = inst.liveMobs.size() <= cfg.mobGlowWhenLeft;
+
+                for (Map.Entry<UUID, DungeonMob> entry
+                        : new ArrayList<>(inst.liveMobs.entrySet())) {
+                    UUID id = entry.getKey();
+                    DungeonMob mob = entry.getValue();
+
+                    // ① 幽灵怪：实体已不存在 / 无效 / 已死 → 清理并推进阶段
+                    if (mob.entity == null || !mob.entity.isValid() || mob.entity.isDead()) {
+                        getLogger().info("清理幽灵副本怪：" + mob.template.name
+                                + "（实体已不存在，阶段照常推进）");
+                        instances.unregisterMob(id);
+                        stages().onMobDeath(inst, id);
                         continue;
                     }
-                    // 清火：副本世界常昼，亡灵怪会被阳光点燃；onMobShield 拦不住
+
+                    // ② 清火：常昼世界亡灵怪会被阳光点燃；onMobShield 拦不住
                     // Arclight 的燃烧伤害，这里直接灭火，防止怪被晒死（scorched to death）。
                     if (mob.entity.getFireTicks() > 0) {
                         mob.entity.setFireTicks(0);
                     }
+
+                    // ③ 发光：剩余怪少时让玩家能透视找到
+                    if (glow) {
+                        mob.entity.addPotionEffect(new PotionEffect(
+                                PotionEffectType.GLOWING, 60, 0, false, false, false));
+                    }
+
+                    // ④ 越界 / 卡方块 → 拉回场地
                     Location loc = mob.entity.getLocation();
                     boolean oob = Math.abs(loc.getX()) > half
                             || Math.abs(loc.getZ()) > half

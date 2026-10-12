@@ -44,6 +44,8 @@ dungeon:
   anti-float: true
   # 连续滞空超过该 tick 数即判定浮空并压回地面（20 tick = 1 秒，正常跳跃约 12 tick，不会误伤）
   anti-float-air-ticks: 15
+  # 剩余怪数 <= 该值时给怪加发光，方便玩家找到最后几只（0 = 关闭）
+  mob-glow-when-left: 5
 
 arena:
   # 启动时自动生成测试场（虚空里铺地板 + 围墙 + 照明）

@@ -37,6 +37,8 @@ public class PluginConfig {
     public boolean antiFloat = true;
     /** 连续滞空超过该 tick 数即判定为浮空并强制压回地面（20 tick = 1 秒） */
     public int antiFloatAirTicks = 15;
+    /** 剩余怪数 <= 该值时给怪加发光，方便玩家找到最后几只（0 = 关闭） */
+    public int mobGlowWhenLeft = 5;
 
     // ---------- arena ----------
     public boolean arenaAutoBuild = true;
@@ -70,6 +72,7 @@ public class PluginConfig {
         restTime = Math.max(0, c.getInt("dungeon.rest-time", 30));
         antiFloat = c.getBoolean("dungeon.anti-float", true);
         antiFloatAirTicks = Math.max(5, c.getInt("dungeon.anti-float-air-ticks", 15));
+        mobGlowWhenLeft = Math.max(0, c.getInt("dungeon.mob-glow-when-left", 5));
 
         String mat = c.getString("dungeon.ticket-material", "NETHER_STAR");
         ticketMaterial = parseMaterial(mat, Material.NETHER_STAR);
