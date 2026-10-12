@@ -17,7 +17,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Vex;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -399,7 +402,7 @@ public class MyDungeon extends JavaPlugin {
 
                     // ① 幽灵怪：实体已不存在 / 无效 / 已死 → 清理并推进阶段
                     if (mob.entity == null || !mob.entity.isValid() || mob.entity.isDead()) {
-                        getLogger().info("清理幽灵副本怪：" + mob.template.name
+                        getLogger().info("清理幽灵副本怪：" + plain(mob.template.name)
                                 + "（实体已不存在，阶段照常推进）");
                         instances.unregisterMob(id);
                         stages().onMobDeath(inst, id);
@@ -418,7 +421,26 @@ public class MyDungeon extends JavaPlugin {
                                 PotionEffectType.GLOWING, 60, 0, false, false, false));
                     }
 
-                    // ④ 越界 / 卡方块 → 拉回场地
+                    Player anchor = nearestPlayerInArena(inst, mob.entity);
+
+                    // ④ VEX（恼鬼）专项：原版恼鬼在「非冲锋」状态会执行随机游荡，
+                    //    而它的导航是「穿墙直线飞行」，不避让方块 —— 这是「卡怪」的头号来源
+                    //    （实测越界记录 100% 来自精英·噬魂鬼）。这里强制它保持冲锋，
+                    //    并锁定场地内最近的玩家：冲锋状态下导航是直线冲向目标，
+                    //    目标在场地内 → 它就不会往场外飞。
+                    if (mob.entity instanceof Vex vex && anchor != null) {
+                        if (!vex.isCharging()) {
+                            vex.setCharging(true);
+                        }
+                        LivingEntity cur = vex.getTarget();
+                        if (!(cur instanceof Player tp) || !tp.isOnline()
+                                || !inst.members.contains(tp.getUniqueId())
+                                || !isDungeonWorld(tp.getWorld())) {
+                            vex.setTarget(anchor);
+                        }
+                    }
+
+                    // ⑤ 越界 / 卡方块 → 拉回场地
                     Location loc = mob.entity.getLocation();
                     boolean oob = Math.abs(loc.getX()) > half
                             || Math.abs(loc.getZ()) > half
@@ -428,14 +450,64 @@ public class MyDungeon extends JavaPlugin {
                             && loc.getBlockY() > floorY;
                     if (oob || stuck) {
                         String reason = oob ? "越界飞出" : "卡进方块";
-                        getLogger().info("拉回卡住的副本怪：" + mob.template.name + "（" + reason
+                        getLogger().info("拉回卡住的副本怪：" + plain(mob.template.name) + "（" + reason
                                 + " @ " + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ()
                                 + " 方块=" + loc.getBlock().getType().name() + "）");
-                        stages().relocateToArena(inst, mob);
+                        if (mob.entity instanceof Vex && anchor != null) {
+                            // 飞行怪不能丢回地面：那是「放回地面 → 立刻起飞 → 再次越界」的死循环。
+                            // 直接安置到目标玩家身边（坐标钳制在场内），它马上就能继续攻击玩家。
+                            relocateNearPlayer(mob.entity, anchor,
+                                    cfg.arenaSize / 2, floorY, wallTop);
+                        } else {
+                            stages().relocateToArena(inst, mob);
+                        }
                     }
                 }
             }
-        }, 40L, 40L);
+        }, 10L, 10L);
+    }
+
+    /** 找副本实例里、仍身处副本世界的最近玩家（用于给恼鬼锁定目标 / 安置回场） */
+    private Player nearestPlayerInArena(DungeonInstance inst, Entity from) {
+        Player best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (UUID u : inst.members) {
+            Player p = Bukkit.getPlayer(u);
+            if (p == null || !p.isOnline() || !isDungeonWorld(p.getWorld())) {
+                continue;
+            }
+            double d = p.getLocation().distanceSquared(from.getLocation());
+            if (d < bestDist) {
+                bestDist = d;
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * 把越界的飞行怪安置到目标玩家身边（坐标钳制在场地内），并复位速度 + 重新冲锋。
+     * 对穿墙飞行的恼鬼，只有「贴到玩家身上」才能让它稳定留在场地内。
+     */
+    private void relocateNearPlayer(Entity mob, Player anchor,
+                                    int arenaHalf, int floorY, int wallTop) {
+        Location a = anchor.getLocation();
+        double lim = Math.max(2.0, arenaHalf - 2.0);
+        double x = Math.max(-lim, Math.min(lim, a.getX() + 2.0));
+        double z = Math.max(-lim, Math.min(lim, a.getZ() + 2.0));
+        double y = Math.max(floorY + 1, Math.min(wallTop - 2, a.getY() + 1.5));
+        mob.teleport(new Location(a.getWorld(), x, y, z));
+        mob.setVelocity(new Vector(0, 0, 0));
+        if (mob instanceof Vex vex) {
+            vex.setCharging(true);
+            vex.setTarget(anchor);
+        }
+    }
+
+    /** 去掉颜色代码，用于日志输出（怪模板名形如 &amp;c精英·噬魂鬼） */
+    private static String plain(String s) {
+        return s == null ? ""
+                : ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', s));
     }
 
     /**
