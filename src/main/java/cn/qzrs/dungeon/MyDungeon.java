@@ -35,6 +35,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * MyDungeon —— 副本挑战插件（MVP）
@@ -53,6 +56,12 @@ public class MyDungeon extends JavaPlugin {
     private RewardManager rewards = new RewardManager();
     private Map<String, MobTemplate> mobs = new LinkedHashMap<>();
     private World dungeonWorld;
+    /**
+     * 纯文件 IO 的专用线程 —— 本插件唯一脱离主线程的工作。
+     * 见 {@link #runAsync(Runnable)}：只允许放进「读写文件 / 纯计算」，
+     * 任何 Bukkit 世界 / 实体 API 都必须留在主线程。
+     */
+    private ExecutorService ioExecutor;
 
     public static MyDungeon get() {
         return instance;
@@ -95,6 +104,11 @@ public class MyDungeon extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        ioExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "MyDungeon-IO");
+            t.setDaemon(true);
+            return t;
+        });
 
         saveDefaultConfig();
         reloadAll();
@@ -142,7 +156,60 @@ public class MyDungeon extends JavaPlugin {
             endInstance(inst, "插件卸载");
         }
         rewards.save();
+        shutdownIoExecutor();
         instance = null;
+    }
+
+    /**
+     * 关闭 IO 线程并等它写完 —— 避免关服瞬间丢掉奖励数据。
+     * 最多等 5 秒，超时放弃（不至于把关服流程卡死）。
+     */
+    private void shutdownIoExecutor() {
+        if (ioExecutor == null) {
+            return;
+        }
+        ioExecutor.shutdown();
+        try {
+            if (!ioExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                getLogger().warning("IO 线程未能在 5 秒内写完，可能有少量数据未落盘。");
+                ioExecutor.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+        ioExecutor = null;
+    }
+
+    /**
+     * 把「纯文件 IO / 纯计算」丢到专用线程执行 —— 主线程不必等磁盘。
+     *
+     * <p><b>可以放进来</b>：读/写文件、拼字符串、纯数学运算。
+     * <br><b>绝对不准放进来</b>：任何 World / Entity / Player / Block 操作 ——
+     * Bukkit 的这些 API 只允许主线程调用，异步调用会抛
+     * {@code IllegalStateException}（例如 "Asynchronous entity add!"）
+     * 或造成静默的数据竞争。调用方必须先在主线程把要用的数据
+     * 「快照」成独立对象（如 {@code new ArrayList<>(集合)}），再交给这里。
+     *
+     * <p>执行器是<b>单线程</b>的 —— 同一个文件不会被两处同时写。
+     * 若执行器已关闭（正在关服），退化为同步执行，保证任务不被丢弃。
+     */
+    public void runAsync(Runnable task) {
+        ExecutorService pool = ioExecutor;
+        if (pool == null || pool.isShutdown()) {
+            task.run();
+            return;
+        }
+        pool.execute(task);
+    }
+
+    /** 没有任何「非空闲」副本时，常驻任务可整段跳过 —— 省掉每 tick 的遍历 */
+    private boolean noActiveInstance() {
+        for (DungeonInstance inst : instances.all()) {
+            if (inst.state != DungeonInstance.State.IDLE) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** 重载全部配置（config.yml / mobs.yml / stages / rewards） */
@@ -255,6 +322,9 @@ public class MyDungeon extends JavaPlugin {
     /** 首领血条刷新：每 0.5 秒对齐一次真实血量 */
     private void startBossBarTask() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (noActiveInstance()) {
+                return;
+            }
             for (DungeonInstance inst : instances.all()) {
                 if (inst.bossBar == null) {
                     continue;
@@ -287,6 +357,9 @@ public class MyDungeon extends JavaPlugin {
      */
     private void startAntiFlyTask() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (noActiveInstance()) {
+                return;
+            }
             PluginConfig cfg = config;
             for (DungeonInstance inst : instances.all()) {
                 for (UUID u : inst.members) {
@@ -316,7 +389,7 @@ public class MyDungeon extends JavaPlugin {
                     }
                 }
             }
-        }, 10L, 1L);
+        }, 10L, 2L);
     }
 
     /**
@@ -325,6 +398,9 @@ public class MyDungeon extends JavaPlugin {
      */
     private void startProgressTask() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (noActiveInstance()) {
+                return;
+            }
             int total = stages.stageCount();
             for (DungeonInstance inst : instances.all()) {
                 if (inst.state != DungeonInstance.State.RUNNING) {
@@ -386,6 +462,9 @@ public class MyDungeon extends JavaPlugin {
      */
     private void startMobLeashTask() {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (noActiveInstance()) {
+                return;
+            }
             PluginConfig cfg = config;
             int half = cfg.arenaSize / 2 + 2;   // 场地半宽 + 2 格余量
             int floorY = cfg.arenaFloorY;

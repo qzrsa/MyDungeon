@@ -97,18 +97,39 @@ public class RewardManager {
         }
     }
 
+    /**
+     * 保存首通记录。
+     *
+     * <p>这里只做「快照 + 派发」两步，真正的磁盘写在 IO 线程上：
+     * <ol>
+     *   <li>在主线程把 {@code cleared} 拷成独立的 List —— HashSet 不是线程安全的，
+     *       不能让 IO 线程边写边读；</li>
+     *   <li>把「文件 + 快照」交给 {@link MyDungeon#runAsync}，主线程立刻返回。</li>
+     * </ol>
+     *
+     * <p>之所以能安全异步：{@code YamlConfiguration} 的 set/save 是纯 JDK +
+     * SnakeYAML 操作，不碰任何 Bukkit 世界 / 实体 API。奖励发放那边
+     * （{@link #give}）已经在主线程做完了，这里剩下的只有落盘。
+     */
     public void save() {
         if (dataFile == null) {
             return;
         }
+        final File file = dataFile;
+        final List<String> snapshot = new ArrayList<>(cleared);
+        MyDungeon.get().runAsync(() -> writeTo(file, snapshot));
+    }
+
+    /** 在 IO 线程上执行的实际落盘动作 */
+    private void writeTo(File file, List<String> snapshot) {
         try {
-            File parent = dataFile.getParentFile();
+            File parent = file.getParentFile();
             if (parent != null && !parent.exists() && !parent.mkdirs()) {
                 MyDungeon.get().getLogger().warning("无法创建数据目录：" + parent);
             }
             YamlConfiguration data = new YamlConfiguration();
-            data.set("first-clear", new ArrayList<>(cleared));
-            data.save(dataFile);
+            data.set("first-clear", snapshot);
+            data.save(file);
         } catch (IOException ex) {
             MyDungeon.get().getLogger().warning("保存首通记录失败：" + ex.getMessage());
         }
